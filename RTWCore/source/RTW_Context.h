@@ -17,7 +17,7 @@ namespace RTW
         uint32 FrameBufferHeight;
         uint32* FrameBufferPixels;
 
-        const char* ApplicationName = "RTW";
+        const char* ApplicationName = "RRTW";
 
         std::mutex MultithreadPixelWriteMutex;
 
