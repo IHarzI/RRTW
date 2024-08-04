@@ -7,21 +7,20 @@
 
 #include "RayCamera.h"
 #include "RTW_Util.h"
-
 #include "RTW_Logger.h"
-
 #include "RTW_Context.h"
-#include "Containers/RTW_DynamicArray.h"
 #include "RTW_Memory.h"
+#include "RTW_Material.h"
+#include "Containers/RTW_DynamicArray.h"
 
 #include <thread>
-#include <mutex>
+
 #define WRITE_TO_IMAGE 0
 
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 6;
+const uint32 maxThreads = 2;
 
 namespace RTW
 {
@@ -87,7 +86,7 @@ namespace RTW
 		for (int32 Y = 0; Y < imageHeight; Y++)
 		{
 
-			if (!GlobalContext.IsRunning)
+			if (!GetRTWGlobalState().IsRunning)
 			{
 				RTW_INFO("Rendering canceled");
 				return;
@@ -97,7 +96,7 @@ namespace RTW
 			for (int32 X = 0; X < imageWidth; X++)
 			{
 
-				RenderPixel(GlobalContext, world, { X,Y }, maxDepth, ImageResoultTarget);
+				RenderPixel( world, { X,Y }, maxDepth, ImageResoultTarget);
 			}
 		}
 #endif
@@ -145,7 +144,7 @@ namespace RTW
 #endif
 
 #if WRITE_TO_IMAGE == 1
-		if (ImageResoultTarget)
+		if (ImageRenderResult)
 		{
 			Util::writeColor(*ImageRenderResult, pixelColor);
 		};
@@ -167,10 +166,17 @@ namespace RTW
 		RTW::HitRecord hitRecord{};
 		if (world.hit(r, 0.001f, Math::MaxFloat64(), hitRecord))
 		{
-			Math::vec3 Dir = hitRecord.normal + Util::RandomHemisphereUnitVector(hitRecord.normal);
-			Ray NewRay(hitRecord.p, Dir);
-			const float32 reflectance = 0.575f;
-			return reflectance * RayColorTrace(NewRay,world, Depth-1);
+			Ray Scattered{};
+			Math::vec3 Attenuation{};
+			if (hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
+			{
+				return Attenuation * RayColorTrace(Scattered, world, Depth - 1);
+			}
+			return Math::vec3{ 0.f };
+			//Math::vec3 Dir = hitRecord.normal + Util::RandomHemisphereUnitVector(hitRecord.normal);
+			//Ray NewRay(hitRecord.p, Dir);
+			//const float32 reflectance = 0.575f;
+			//return reflectance * RayColorTrace(NewRay,world, Depth-1);
 		}
 		else
 		{

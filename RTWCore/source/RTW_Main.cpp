@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 #include "RTW_Context.h"
-
+#include "Containers/RTW_DynamicArray.h"
 #include <thread>
 
 #ifdef  RTW_SYSTEM_WINDOWS
@@ -70,18 +70,28 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     {
         RTW_ASSERT(false);
     }
-    
     // Setup RTW render
     // -----------------
-    RTW::RayCamera Camera(1800, 2);
+    RTW::RayCamera Camera(1900, 2);
     RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
     RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
-    RTW::RayObject* ObjectList[2];
-    ObjectList[0] = new RTW::Sphere(RTW::Math::vec3{ .0f,.0f,-1.f }, .5f);
-    ObjectList[1] = new RTW::Sphere(RTW::Math::vec3(.0f, -100.5f, -1.f), 100.f);
-    RTW::RayList World{ ObjectList, 2 };
-    Camera.setPerPixelSamples(25);
-    Camera.setDepth(50);
+    RTW::Containers::DynamicArray<UniqueMemoryHandle<RTW::RayObject>> ObjectList{ 50 };
+
+    auto material_ground =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.8, 0.8, 0.0));
+    auto material_center =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.1, 0.2, 0.5));
+    auto material_left =    MakeSharedHandle<RTW::Materials::Dielectric>(1.5);
+    auto material_bubble =  MakeSharedHandle<RTW::Materials::Dielectric>(1.0/1.5);
+    auto material_right =   MakeSharedHandle<RTW::Materials::Metal>(RTW::Math::vec3(0.8, 0.6, 0.2), 1.f);
+
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, -100.5, -1.0), 100.0f, material_ground.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, 0.0, -1.2), 0.5f,      material_center.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(-1.0, 0.0, -1.0), 0.5f,     material_left.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(-1.0, 0.0, -1.0), 0.4f,     material_bubble.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(1.0, 0.0, -1.0), 0.5f,      material_right.Get()).RetrieveResourse());
+
+    RTW::RayList World{ std::move(ObjectList) };
+    Camera.setPerPixelSamples(50);
+    Camera.setDepth(25);
     // -----------------
 
     RTWGlobalState.WindowHandle = CreateWindowExA(
@@ -110,7 +120,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     {
         RTW_ASSERT(false);
     }
-    
+
     // kind of hack fix to match client window surface size with framebuffer 
     {
         RECT rcClient, rcWind;
@@ -140,6 +150,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     // ----------------
     std::thread RenderThread([&]() {Camera.render(World); });
     // ----------------
+
     while (RTWGlobalState.IsRunning)
     {
         RTW_ASSERT(QueryPerformanceCounter(&EndTime));

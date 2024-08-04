@@ -15,11 +15,12 @@ namespace RTW
 	{
 	public:
 		Sphere() {};
-		Sphere(Math::vec3 center, float32 r) : center(center), radius(r) {};
+		Sphere(Math::vec3 center, float32 r, SharedMemoryHandle<Material> material) : center(center), radius(r), material(material) {};
 		virtual bool hit(const Ray& r, float32 tMin, float32 tMax, HitRecord& rec) const;
 
 		Math::vec3 center;
 		float32 radius;
+		SharedMemoryHandle<Material> material;
 	};
 
 };

@@ -19,7 +19,7 @@
 
 #define RTW_LOG_ERROR_OR_FATAL_CODE -999
 
-#if RTW_RELEASE == 1
+#if RTW_BUILD_RELEASE == 1
 
 #define RTW_LOG_MASK (RTW_LOG_WARN_ENABLED | RTW_LOG_INFO_ENABLED)
 
@@ -39,11 +39,11 @@ namespace RTW
 
 	class Logger
 	{
+		Logger() {};
+		~Logger() {};
 	public:
 		RTW_STATIC Logger& instance() { RTW_STATIC Logger instance; return instance; }
 
-		Logger() {};
-		~Logger() {};
 		RTW_STATIC int logOutput(rtw_log_levels level, const char* msg, ...);
 
 		RTW_STATIC void reportFailedAssert(const char* expression, const char* msg, const char* file, int line)

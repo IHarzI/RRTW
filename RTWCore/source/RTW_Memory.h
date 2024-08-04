@@ -8,9 +8,11 @@
 #pragma once
 
 #include "RTW_CORE.h"
-
+#include "RTW_Logger.h"
 #include <memory>
 #include <cstdint>
+#include <map>
+#include <mutex>
 
 RTW_INLINE RTW_STATIC void rtw_zero_memory(void* block, uint64 size);
 
@@ -18,11 +20,32 @@ template <typename T, typename ...Args>
 [[nodiscard]] RTW_STATIC T* rtw_new(Args&&... args);
 
 template <typename T>
-RTW_STATIC void rtw_delete(T* address);
+RTW_STATIC void rtw_delete(T* address) noexcept;
+
+#define REFERENCE_INTERLOCK_GUARD std::lock_guard<std::mutex> InterlockGuard{RTW::Memory::detail::GetInterlockedMutex()};
 
 namespace RTW
 {
 	namespace Memory {
+		namespace detail
+		{
+			RTW_STATIC RTW_INLINE std::mutex& GetInterlockedMutex() { RTW_STATIC std::mutex InterlockedMutex{}; return InterlockedMutex; }
+
+			RTW_STATIC RTW_INLINE void ReferenceIncrementInterlocked(uint64& ref) {
+				REFERENCE_INTERLOCK_GUARD
+				ref++;
+			}
+
+			RTW_STATIC RTW_INLINE void ReferenceDecrementInterlocked(uint64& ref) {
+				REFERENCE_INTERLOCK_GUARD
+				ref--;
+			}
+
+			RTW_STATIC RTW_INLINE uint64 ReferenceGetValueInterlocked(uint64& ref) {
+				REFERENCE_INTERLOCK_GUARD
+				return ref;
+			}
+		}
 
 		class MallocAllocator
 		{
@@ -48,7 +71,7 @@ namespace RTW
 
 // Call deconstructor for object and release occupied memory block
 template <typename T>
-RTW_STATIC void rtw_delete(T* address)
+RTW_STATIC void rtw_delete(T* address) noexcept
 {
 	RTW_ASSERT_MSG(address, "Invalid poitner to delete!");
 	address->~T();
@@ -141,6 +164,11 @@ public:
 
 	void Reset(T* DataToHandle)
 	{
+		if (Data == DataToHandle)
+		{
+			return;
+		}
+
 		if (!DataToHandle)
 		{
 			Release();
@@ -151,6 +179,13 @@ public:
 
 	void Reset(UniqueMemoryHandle<T> OtherHandle)
 	{
+		if (Data == OtherHandle.Get())
+		{
+			// Two same unique handles??
+			RTW_ERROR("Resourse ownership violation");
+			return;
+		}
+
 		if (!OtherHandle.IsValid())
 		{
 			Release();
@@ -208,6 +243,11 @@ private:
 			return;
 		}
 
+		if (Data == DataToHandle)
+		{
+			return;
+		}
+
 		Release();
 		Data = DataToHandle;
 	}
@@ -223,3 +263,249 @@ private:
 		Data = nullptr;
 	}
 };
+
+
+template <typename T>
+struct SharedMemoryHandle
+{
+public:
+	template <typename ...Args>
+	RTW_STATIC SharedMemoryHandle Create(Args&&... args)
+	{
+		return SharedMemoryHandle((T*)(rtw_new<T>(args...)));
+	}
+
+	SharedMemoryHandle() : Data(nullptr) {};
+
+	SharedMemoryHandle(const SharedMemoryHandle& OtherHandle)
+	{
+		AcquireDataToHandle(OtherHandle.Get());
+	}
+
+	SharedMemoryHandle& operator=(const SharedMemoryHandle& OtherHandle)
+	{
+		if (this != &OtherHandle) {
+			if (IsValid())
+			{
+				Release();
+			}
+			AcquireDataToHandle(OtherHandle.Get());
+		}
+		return *this;
+	}
+
+	SharedMemoryHandle(SharedMemoryHandle& OtherHandle)
+	{
+		if (IsValid())
+		{
+			Release();
+		}
+		AcquireDataToHandle(OtherHandle.Data);
+	}
+
+	SharedMemoryHandle(UniqueMemoryHandle<T>&& OtherUniqueHandle) noexcept
+	{
+		AcquireDataToHandle(OtherUniqueHandle.RetrieveResourse());
+	}
+
+	SharedMemoryHandle(SharedMemoryHandle&& OtherHandle) noexcept
+	{
+		AcquireDataToHandle(OtherHandle.Get());
+		OtherHandle.Release();
+	}
+
+	SharedMemoryHandle& operator=(SharedMemoryHandle&& OtherHandle) noexcept
+	{
+		if (this != &OtherHandle) {
+			if (IsValid())
+			{
+				Release();
+			}
+			AcquireDataToHandle(OtherHandle.Get());
+			OtherHandle.Release();
+		}
+		return *this;
+	}
+
+	SharedMemoryHandle(T* DataToHandle)
+	{
+		AcquireDataToHandle(DataToHandle);
+	}
+
+	~SharedMemoryHandle()
+	{
+		if (IsValid())
+		{
+			Release();
+		};
+	}
+
+	bool IsValid() const
+	{
+		return Data != nullptr;
+	}
+
+	T* Get() const { return Data; };
+	T* Get() { return Data; };
+
+	const T& GetReference() const { RTW_ASSERT(IsValid()); return *Data; };
+	T& GetReference() { RTW_ASSERT(IsValid()); return *Data; };
+
+	void Release() { ReleaseResourseChecked(); };
+
+	void Reset(T* DataToHandle)
+	{
+		if (Data == DataToHandle)
+		{
+			return;
+		}
+
+		if (IsValid())
+		{
+			Release();
+		}
+		AcquireDataToHandle(DataToHandle);
+	}
+
+	void Reset(SharedMemoryHandle<T> OtherHandle)
+	{
+		if (Data == OtherHandle.Get())
+		{
+			return;
+		}
+
+		if (IsValid())
+		{
+			Release();
+		}
+		AcquireDataToHandle(OtherHandle.Get());
+	}
+
+	explicit operator bool() const {
+		return IsValid();
+	}
+
+	bool operator==(T* DataPtr)
+	{
+		return Data == DataPtr;
+	}
+
+	bool operator==(SharedMemoryHandle<T>& OtherHandle)
+	{
+		return Data == OtherHandle.Data;
+	}
+
+	bool operator!=(T* DataPtr)
+	{
+		return !(Data == DataPtr);
+	}
+
+	bool operator!=(SharedMemoryHandle<T>& OtherHandle)
+	{
+		return !(Data == OtherHandle.Data_);
+	}
+
+	T& operator*() const {
+		return GetReference();
+	}
+
+	T* operator->() const {
+		return Get();
+	}
+
+	T& operator*() {
+		return GetReference();
+	}
+
+	T* operator->() {
+		return Get();
+	}
+
+private:
+
+	void AcquireDataToHandle(T* DataToHandle)
+	{
+		if (!DataToHandle)
+		{
+			return;
+		}
+
+		if (Data == DataToHandle)
+		{
+			return;
+		}
+
+		InitCheckedRefMap();
+
+		if (auto RefCounterToData = RefMap->find(DataToHandle); RefCounterToData != RefMap->end())
+		{
+			RTW::Memory::detail::ReferenceIncrementInterlocked(RefCounterToData->second);
+		}
+		else
+		{
+			RefMap->insert({ DataToHandle, 1 });
+		}
+
+		Data = DataToHandle;
+	}
+
+	void InitCheckedRefMap()
+	{
+		if (!RefMap)
+		{
+			REFERENCE_INTERLOCK_GUARD
+			RefMap = rtw_new<RefMapType>();
+			RTW_ASSERT(RefMap);
+		}
+	}
+
+	void ReleaseRefMapIfEmpty()
+	{
+		if (RefMap && RefMap->size() < 1)
+		{
+			rtw_delete(RefMap);
+			RefMap = nullptr;
+		}
+	}
+
+	void ReleaseResourseChecked()
+	{
+		if (Data && RefMap)
+		{
+			REFERENCE_INTERLOCK_GUARD
+			auto RefCounterToData = RefMap->find(Data);
+			RTW_ASSERT(RefCounterToData != RefMap->end());
+			if (RefCounterToData != RefMap->end())
+			{
+				RefCounterToData->second--;
+				if (RefCounterToData->second < 1)
+				{
+					RefMap->erase(Data);
+					rtw_delete(Data);
+					ReleaseRefMapIfEmpty();
+				}
+			};
+		};
+		Data = nullptr;
+	}
+
+	T* Data = nullptr;
+	using RefCount = uint64;
+	using ValuePtr = T*;
+	using RefMapType = std::unordered_map<ValuePtr, RefCount>;
+	RTW_STATIC RTW_INLINE RefMapType* RefMap = nullptr;
+};
+
+template<typename T, typename ...Args>
+RTW_STATIC SharedMemoryHandle<T> MakeSharedHandle(Args&&... args)
+{
+	return std::move(SharedMemoryHandle<T>::Create(args...));
+}
+
+template<typename T, typename ...Args>
+RTW_STATIC UniqueMemoryHandle<T> MakeUniqueHandle(Args&&... args)
+{
+	return std::move(UniqueMemoryHandle<T>::Create(args...));
+}
+
+#undef REFERENCE_INTERLOCK_GUARD

@@ -120,6 +120,11 @@ namespace RTW
 			elementsInside = Other.elementsInside;
 			capacity = Other.capacity;
 			m_InternalAllocator = Other.m_InternalAllocator;
+
+			Other.MemoryBlock = nullptr;
+			Other.elementsInside = 0;
+			Other.capacity = 0;
+			Other.m_InternalAllocator = {};
 		};
 
 		template<typename ValueT>

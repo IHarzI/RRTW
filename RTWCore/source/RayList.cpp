@@ -14,9 +14,9 @@ namespace RTW
 		HitRecord record;
 		bool hitAnything = false;
 		float64 closest = tMax;
-		for (int32 i = 0; i < size; i++)
+		for(auto& Object : rayObjectsList)
 		{
-			if (List[i]->hit(r, tMin, closest, record))
+			if (Object->hit(r, tMin, closest, record))
 			{
 				hitAnything = true;
 				closest = record.t;

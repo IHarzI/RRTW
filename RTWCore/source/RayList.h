@@ -8,18 +8,18 @@
 #pragma once
 
 #include "RayObject.h"
-
+#include "Containers/RTW_DynamicArray.h"
 namespace RTW
 {
 
 	class RayList : public RayObject
 	{
 	public:
+		using ObjectList = Containers::DynamicArray<UniqueMemoryHandle<RTW::RayObject>>;
 		RayList() {};
-		RayList(RayObject** list, int32 count) : List(list), size(count) {};
+		RayList(ObjectList list) : rayObjectsList(list){};
 		virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const;
-		RayObject** List;
-		int32 size;
+		ObjectList rayObjectsList;
 	};
 
 };

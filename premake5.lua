@@ -11,7 +11,7 @@ workspace "RTW"
 project "RTWCore"
 	kind "WindowedApp" 
 	language "C++"
-	cppdialect "C++14"
+	cppdialect "C++17"
 
 	targetdir("bin/" .. outputdir .. "/%{prj.name}")
 	objdir("bin-int/" .. outputdir .. "/%{prj.name}")

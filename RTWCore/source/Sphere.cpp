@@ -39,6 +39,7 @@ namespace RTW
 				rec.t = temp;
 				rec.p = r.pointAtScalar(rec.t);
 				rec.setFaceNormal(r, (rec.p - center) / radius);
+				rec.mat = material;
 				return true;
 			}
 		}
