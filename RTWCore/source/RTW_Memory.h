@@ -16,6 +16,8 @@
 
 RTW_INLINE RTW_STATIC void rtw_zero_memory(void* block, uint64 size);
 
+RTW_INLINE RTW_STATIC void rtw_set_memory(void* block, uint64 size, int32 Value);
+
 template <typename T, typename ...Args>
 [[nodiscard]] RTW_STATIC T* rtw_new(Args&&... args);
 
@@ -90,6 +92,8 @@ template <typename T, typename ...Args>
 }
 
 RTW_INLINE RTW_STATIC void rtw_zero_memory(void* block, uint64 size) { memset(block, 0, size); };
+
+RTW_INLINE RTW_STATIC void rtw_set_memory(void* block, uint64 size, int32 Value) { memset(block, Value, size); };
 
 template <typename T>
 struct UniqueMemoryHandle

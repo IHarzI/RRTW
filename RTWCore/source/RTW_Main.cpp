@@ -72,16 +72,16 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     }
     // Setup RTW render
     // -----------------
-    RTW::RayCamera Camera(1900, 2);
+    RTW::RayCamera Camera(1200, 2);
     RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
     RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
     RTW::Containers::DynamicArray<UniqueMemoryHandle<RTW::RayObject>> ObjectList{ 50 };
 
-    auto material_ground =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.8, 0.8, 0.0));
-    auto material_center =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.1, 0.2, 0.5));
-    auto material_left =    MakeSharedHandle<RTW::Materials::Dielectric>(1.5);
+    auto material_ground =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.95, 0.92, 0.05));
+    auto material_center =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.9, 0.05, 0.1));
+    auto material_left   =  MakeSharedHandle<RTW::Materials::Dielectric>(1.5);
     auto material_bubble =  MakeSharedHandle<RTW::Materials::Dielectric>(1.0/1.5);
-    auto material_right =   MakeSharedHandle<RTW::Materials::Metal>(RTW::Math::vec3(0.8, 0.6, 0.2), 1.f);
+    auto material_right  =  MakeSharedHandle<RTW::Materials::Metal>(RTW::Math::vec3(0.05, 0.85, 0.92), 0.56f);
 
     ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, -100.5, -1.0), 100.0f, material_ground.Get()).RetrieveResourse());
     ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, 0.0, -1.2), 0.5f,      material_center.Get()).RetrieveResourse());
@@ -91,7 +91,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
     RTW::RayList World{ std::move(ObjectList) };
     Camera.setPerPixelSamples(50);
-    Camera.setDepth(25);
+    Camera.setDepth(20);
+    Camera.setVFov(90);
     // -----------------
 
     RTWGlobalState.WindowHandle = CreateWindowExA(

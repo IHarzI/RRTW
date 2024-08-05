@@ -26,6 +26,7 @@ namespace RTW
 			DynamicArray();
 			DynamicArray(DynamicArray& Other);
 			DynamicArray(DynamicArray&& Other);
+			DynamicArray(const DynamicArray& Other);
 			DynamicArray(SizeType capacity);
 			DynamicArray(std::initializer_list<ValueT> list);
 			~DynamicArray();
@@ -56,7 +57,10 @@ namespace RTW
 			const ValueT* LookAtIndex(IndexT index) const;
 
 			// Resize container
-			bool Resize(SizeType capacity);
+			bool Resize(SizeType newSize);
+
+			// Resize container
+			bool Reserve(SizeType NewCapacity);
 
 			// Get capacity;
 			RTW_INLINE SizeType GetCapacity() const { return capacity; };
@@ -105,7 +109,18 @@ namespace RTW
 		template<typename ValueT>
 		DynamicArray<ValueT>::DynamicArray(DynamicArray& Other)
 		{
-			Resize(Other.capacity);
+			Reserve(Other.capacity);
+			if (Other.elementsInside > 0)
+			{
+				Memory::copyMemory(Other.MemoryBlock, MemoryBlock, capacity * sizeof(ValueT));
+				elementsInside = Other.elementsInside;
+			};
+		};
+
+		template<typename ValueT>
+		DynamicArray<ValueT>::DynamicArray(const DynamicArray& Other)
+		{
+			Reserve(Other.capacity);
 			if (Other.elementsInside > 0)
 			{
 				Memory::copyMemory(Other.MemoryBlock, MemoryBlock, capacity * sizeof(ValueT));
@@ -138,12 +153,12 @@ namespace RTW
 					this->capacity = capacity;
 				}
 			};
-		};
+		}
 
 		template<typename ValueT>
 		DynamicArray<ValueT>::DynamicArray(std::initializer_list<ValueT> list)
 		{
-			Resize(list.size() * sizeof(ValueT) * 8);
+			Reserve(list.size() * sizeof(ValueT) * 8);
 			for (auto& Value : list)
 			{
 				PushBack(Value);
@@ -166,7 +181,7 @@ namespace RTW
 			{
 				if (elementsInside + 1 >= capacity)
 				{
-					bool result = Resize(capacity * 1.25f);
+					bool result = Reserve(capacity * 1.25f);
 					RTW_ASSERT(result);
 				}
 
@@ -188,7 +203,7 @@ namespace RTW
 			{
 				if (elementsInside + 1 >= capacity)
 				{
-					bool result = Resize(capacity * 1.25f);
+					bool result = Reserve(capacity * 1.25f);
 					RTW_ASSERT(result);
 				}
 
@@ -273,7 +288,14 @@ namespace RTW
 		};
 
 		template<typename ValueT>
-		bool DynamicArray<ValueT>::Resize(SizeType NewCapacity)
+		bool DynamicArray<ValueT>::Resize(SizeType newSize)
+		{
+			Reserve(newSize);
+			elementsInside = newSize;
+			return true;
+		}
+		template<typename ValueT>
+		bool DynamicArray<ValueT>::Reserve(SizeType NewCapacity)
 		{
 			if (NewCapacity > 0 && NewCapacity != InvalidIndex() && NewCapacity >= elementsInside)
 			{

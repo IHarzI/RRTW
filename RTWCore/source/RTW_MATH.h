@@ -514,9 +514,32 @@ namespace harz {
 			return std::cos(x);
 		}
 
+
+		MATHARZ_INLINE float cos(float x)
+		{
+			return std::cosf(x);
+		}
+
+
+		MATHARZ_INLINE double cos(double x)
+		{
+			return std::cos(x);
+		}
+
 		// Acos 
 		template<typename number_t = float>
 		MATHARZ_INLINE number_t acos(number_t x)
+		{
+			return std::acos(x);
+		}
+
+		MATHARZ_INLINE float acos(float x)
+		{
+			return std::acosf(x);
+		}
+
+
+		MATHARZ_INLINE double acos(double x)
 		{
 			return std::acos(x);
 		}
@@ -528,11 +551,51 @@ namespace harz {
 			return std::sin(x);
 		}
 
+		MATHARZ_INLINE float sin(float x)
+		{
+			return std::sinf(x);
+		}
+
+
+		MATHARZ_INLINE double sin(double x)
+		{
+			return std::sin(x);
+		}
+
 		// Asin
 		template<typename number_t = float>
 		MATHARZ_INLINE number_t asin(number_t x)
 		{
 			return std::asin(x);
+		}
+
+		MATHARZ_INLINE float asin(float x)
+		{
+			return std::asinf(x);
+		}
+
+
+		MATHARZ_INLINE double asin(double x)
+		{
+			return std::asin(x);
+		}
+
+		// Tan
+		template<typename number_t = float>
+		MATHARZ_INLINE number_t tan(number_t x)
+		{
+			return std::tan(x);
+		}
+
+		MATHARZ_INLINE float tan(float x)
+		{
+			return std::tanf(x);
+		}
+
+
+		MATHARZ_INLINE double tan(double x)
+		{
+			return std::tan(x);
 		}
 
 		// Clamp value from x, y

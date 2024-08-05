@@ -14,13 +14,14 @@
 #include "Containers/RTW_DynamicArray.h"
 
 #include <thread>
+#include <future>
 
-#define WRITE_TO_IMAGE 0
+#define WRITE_TO_IMAGE 1
 
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 2;
+const uint32 maxThreads = 4;
 
 namespace RTW
 {
@@ -34,17 +35,19 @@ namespace RTW
 
 	void RayCamera::render(const RayList& world)
 	{
-		std::ofstream* ImageResoultTarget = nullptr;
+		Containers::DynamicArray<char>* CharImageBuffPtr = nullptr;
 #if WRITE_TO_IMAGE == 1
+		Containers::DynamicArray<char> CharImageBuff{};
+		CharImageBuff.Resize(imageWidth * imageHeight * RTW::Util::PixelImageFormatSizes[RTW::Util::P3M]);
+		CharImageBuffPtr = &CharImageBuff;
 		std::ofstream Image;
 		Image.open("assets/exampleImage.ppm");
 		Image << "P3\n" << imageWidth << ' ' << imageHeight << "\n255\n";
-		ImageResoultTarget = &Image;
 #endif
 
 #if RENDER_MULTITHREAD == 1
 		int32 RenderThreadPoolIndex = 0;
-		Containers::DynamicArray<UniqueMemoryHandle<std::thread>> ThreadPool{maxThreads};
+		Containers::DynamicArray<std::future<void>> ThreadPool{maxThreads};
 
 		for (int32 iThread = 0; iThread < maxThreads; iThread++)
 		{
@@ -54,31 +57,35 @@ namespace RTW
 			YStartThreadOffset = Math::clamp(YStartThreadOffset,0, imageHeight - ImageThreadPart);
 			YEndThreadOffset = Math::clamp(YEndThreadOffset, YStartThreadOffset, imageHeight);
 
-			auto RenderF = [&world, this](int32 YStartThreadOffset, int32 YEndThreadOffset,	std::ofstream* ImageResoultTarget) {
+			auto RenderF = [&world, CharImageBuffPtr, this](int32 YStartThreadOffset, int32 YEndThreadOffset, 
+				Containers::DynamicArray<char>* ImageCharBuff)
+			{
+
 				for (int32 YPixelIndex = YStartThreadOffset; YPixelIndex < YEndThreadOffset; YPixelIndex++)
 				{
+					if (!RTW::GetRTWGlobalState().IsRunning)
+					{
+						RTW_INFO("Rendering canceled, threadID: %i", std::this_thread::get_id());
+						return;
+					}
+
 					for (int32 XPixelIndex = 0; XPixelIndex < imageWidth; XPixelIndex++)
 					{
-						if (!RTW::GetRTWGlobalState().IsRunning)
-						{
-							RTW_INFO("Rendering canceled, threadID: %i", std::this_thread::get_id());
-							return;
-						}
 						//RTW_INFO("THREAD ID : %i  COORDS{X: %i, Y: %i}\n\0", std::this_thread::get_id(), XPixelIndex, YPixelIndex);
-						RenderPixel(world, { XPixelIndex,YPixelIndex }, maxDepth, ImageResoultTarget);
+						RenderPixel(world, { XPixelIndex,YPixelIndex }, maxDepth, CharImageBuffPtr);
 					}
 				}
 			};
 
-			ThreadPool.EmplaceBack(rtw_new<std::thread>(RenderF, YStartThreadOffset, YEndThreadOffset, ImageResoultTarget));
+			auto result = std::async(std::launch::async, RenderF, YStartThreadOffset, YEndThreadOffset, CharImageBuffPtr);
+			ThreadPool.EmplaceBack(std::move(result));
 			
 			RenderThreadPoolIndex++;
 		};
 
 		for (auto& thread : ThreadPool)
 		{
-			thread->join();
-			thread.Release();
+			thread.get();
 		}
 		RenderThreadPoolIndex = 0;
 		ThreadPool.Clear();
@@ -96,12 +103,13 @@ namespace RTW
 			for (int32 X = 0; X < imageWidth; X++)
 			{
 
-				RenderPixel( world, { X,Y }, maxDepth, ImageResoultTarget);
+				RenderPixel( world, { X,Y }, maxDepth, CharImageBuffPtr);
 			}
 		}
 #endif
 
 #if WRITE_TO_IMAGE == 1
+		Image.write(CharImageBuff.data(), CharImageBuff.size());
 		Image.close();
 #endif
 
@@ -114,8 +122,10 @@ namespace RTW
 		imageHeight = imageHeight < 1 ? 1 : imageHeight;
 		setPerPixelSamples(10);
 
-		float32 focalLenght = 1.f;
-		float32 viewportHeight = 2.f;
+		float32 focalLength = 1.f;
+		float32 theta = Math::radians(VFov);
+		float32 h = Math::tan(theta / 2);
+		float32 viewportHeight = 2.f * h * focalLength;
 		float32 viewportWidth = viewportHeight * (float32(imageWidth) / imageHeight);
 
 		Math::vec3 viewportU = Math::vec3(viewportWidth, .0f, .0f);
@@ -124,11 +134,11 @@ namespace RTW
 		pixelUOffset = viewportU / imageWidth;
 		pixelVOffset = viewportV / imageHeight;
 
-		Math::vec3 viewportUL = center - Math::vec3{.0f,.0f,focalLenght} - viewportU/2 - viewportV/2;
+		Math::vec3 viewportUL = center - Math::vec3{.0f,.0f,focalLength } - viewportU/2 - viewportV/2;
 		llCorner = viewportUL + .5f * (pixelUOffset + pixelVOffset);
 	}
 
-	void RayCamera::RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, std::ofstream* ImageRenderResult)
+	void RayCamera::RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff)
 	{
 		Math::vec3 pixelColor{ 0.f, 0.f, 0.f };
 		for (int32 sample = 0; sample < PerPixelSamples; sample++)
@@ -144,9 +154,9 @@ namespace RTW
 #endif
 
 #if WRITE_TO_IMAGE == 1
-		if (ImageRenderResult)
+		if (CharImageBuff)
 		{
-			Util::writeColor(*ImageRenderResult, pixelColor);
+			Util::writeColor(CharImageBuff->data(), pixelColor, {imageWidth,imageHeight}, PixelCoords);
 		};
 #endif
 
@@ -173,10 +183,6 @@ namespace RTW
 				return Attenuation * RayColorTrace(Scattered, world, Depth - 1);
 			}
 			return Math::vec3{ 0.f };
-			//Math::vec3 Dir = hitRecord.normal + Util::RandomHemisphereUnitVector(hitRecord.normal);
-			//Ray NewRay(hitRecord.p, Dir);
-			//const float32 reflectance = 0.575f;
-			//return reflectance * RayColorTrace(NewRay,world, Depth-1);
 		}
 		else
 		{

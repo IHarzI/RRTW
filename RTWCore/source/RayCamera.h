@@ -33,21 +33,29 @@ namespace RTW
 			maxDepth = Depth;
 		}
 
+		void setVFov(float32 verticalFov)
+		{
+			VFov = verticalFov;
+		}
+
 		int32 GetImageHeight() const { return imageHeight; };
 		int32 GetImageWidth() const { return imageWidth; };
 	private:
 
 		void initialize();
-		void RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, std::ofstream* ImageRenderResult = nullptr);
+		void RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff = nullptr);
 		Math::vec3 RayColorTrace(const Ray& r, const RayList& world, int32 Depth);
 		Ray getRay(int32 i, int32 j) const;
 		Math::vec3 sampleSquare() const;
+
  		float32 aspectRatio = 1.0;
 		float64 pixelSamplesScale;
 		int32    imageWidth = 100;
 		int32 imageHeight;
 		uint32 PerPixelSamples = 10;
 		int32 maxDepth = 10;
+		float32 VFov = 90.f;
+
 		Math::vec3 center;
 		Math::vec3 llCorner;
 		Math::vec3 pixelUOffset;

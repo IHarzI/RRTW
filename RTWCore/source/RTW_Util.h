@@ -16,7 +16,21 @@ namespace RTW
 {
 	namespace Util
 	{
-		void writeColor(std::ofstream& stream, const RTW::Math::vec3 color);
+		enum PixelImageFormat : uint32
+		{
+			P3M = 0
+		};
+
+		RTW_STATIC constexpr uint32 PixelImageFormatSizes[] =
+		{
+			12
+		};
+
+		RTW_STATIC constexpr const char* PixelImageCharFormat[] = {
+			"%03d %03d %03d\n"
+		};
+
+		void writeColor(char* ImageCharBuff, const Math::vec3 color, const Math::vec2i imageSize, const Math::vec2i PixelCoords);
 
 		void writePixelColor(uint32* Pixel, Math::vec3 color);
 
