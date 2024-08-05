@@ -366,3 +366,5 @@ FodyWeavers.xsd
 *.vcxproj
 /assets/exampleImage.ppm
 /RTWCore.vcxproj.filters
+/assets/exampleImage.png
+/assets/PinkFilter.png
