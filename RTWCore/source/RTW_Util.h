@@ -79,6 +79,19 @@ namespace RTW
 			}
 		};
 
+		RTW_STATIC RTW_INLINE Math::vec3 RandomUnitDiskVector()
+		{
+			//Devil loop
+			while (true)
+			{
+				Math::vec3 vector{ (float32)randomDouble(-1,1), (float32)randomDouble(-1,1), .0f};
+				if (Math::less(vector.SquareLength(), 1.f))
+				{
+					return vector;
+				}
+			}
+		};
+
 		RTW_STATIC RTW_INLINE Math::vec3 RandomUnitSphereUnitVector()
 		{
 			return RandomUnitSphereVector().Normalize();

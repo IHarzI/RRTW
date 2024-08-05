@@ -72,9 +72,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     }
     // Setup RTW render
     // -----------------
-    RTW::RayCamera Camera(1200, 2);
-    RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
-    RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
     RTW::Containers::DynamicArray<UniqueMemoryHandle<RTW::RayObject>> ObjectList{ 50 };
 
     auto material_ground =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.95, 0.92, 0.05));
@@ -83,16 +80,56 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     auto material_bubble =  MakeSharedHandle<RTW::Materials::Dielectric>(1.0/1.5);
     auto material_right  =  MakeSharedHandle<RTW::Materials::Metal>(RTW::Math::vec3(0.05, 0.85, 0.92), 0.56f);
 
-    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, -100.5, -1.0), 100.0f, material_ground.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, -100.5, -1.0), 100.f, material_ground.Get()).RetrieveResourse());
     ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, 0.0, -1.2), 0.5f,      material_center.Get()).RetrieveResourse());
     ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(-1.0, 0.0, -1.0), 0.5f,     material_left.Get()).RetrieveResourse());
     ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(-1.0, 0.0, -1.0), 0.4f,     material_bubble.Get()).RetrieveResourse());
     ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(1.0, 0.0, -1.0), 0.5f,      material_right.Get()).RetrieveResourse());
+    // Spawn paradise of spheres
+    {
+        const int MaxSpheresLoop = 25;
+        for (int a = -MaxSpheresLoop; a < MaxSpheresLoop; a++) {
+            for (int b = -MaxSpheresLoop; b < MaxSpheresLoop; b++) {
+                auto choose_mat = RTW::Util::randomDouble();
+                RTW::Math::vec3 center(a + 0.9 * RTW::Util::randomDouble(), RTW::Util::randomDouble(0.f, 1.f) * a - b, b + 0.9 * RTW::Util::randomDouble());
+
+                if ((center - RTW::Math::vec3(4, 0.2, 0)).Lenght() > 0.9) {
+                    SharedMemoryHandle<RTW::Material> sphere_material;
+
+                    if (choose_mat < 0.8) {
+                        // diffuse
+                        auto albedo = RTW::Util::RandomVector(0.f, 1.f) * RTW::Util::RandomVector(0.f, 1.f);
+                        sphere_material = rtw_new<RTW::Materials::Lambertian>(albedo);
+                    }
+                    else if (choose_mat < 0.95) {
+                        // metal
+                        auto albedo = RTW::Util::RandomVector(0.5f, 1.f);
+                        auto fuzz = RTW::Util::randomDouble(0.f, 0.5f);
+                        sphere_material = rtw_new<RTW::Materials::Metal>(albedo, fuzz);
+                    }
+                    else {
+                        // glass
+                        sphere_material = rtw_new<RTW::Materials::Dielectric>(1.5);
+                    }
+                    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(center, 0.2, sphere_material).RetrieveResourse());
+                }
+            }
+        }
+    };
 
     RTW::RayList World{ std::move(ObjectList) };
-    Camera.setPerPixelSamples(50);
-    Camera.setDepth(20);
-    Camera.setVFov(90);
+
+    // Camera init
+    RTW::RayCamera Camera(1200, 16.f/9.f);
+    RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
+    RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
+    Camera.setPerPixelSamples(10);
+    Camera.setDepth(10);
+    Camera.setVFov(20);
+    Camera.SetViewPerspective({ 10,2,3 }, { -1,0,-1 }, { 0,1,0 });
+    Camera.SetFocus(3, 10);
+    Camera.initialize();
+
     // -----------------
 
     RTWGlobalState.WindowHandle = CreateWindowExA(

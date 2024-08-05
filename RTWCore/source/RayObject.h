@@ -15,7 +15,7 @@ namespace RTW
 {
 	struct HitRecord {
 		float32 t;
-		SharedMemoryHandle<Material> mat;
+		Material* mat;
 		Math::vec3 p;
 		Math::vec3 normal;
 		uint8 frontFace : 1;

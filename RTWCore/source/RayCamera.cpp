@@ -21,7 +21,7 @@
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 4;
+const uint32 maxThreads = 5;
 
 namespace RTW
 {
@@ -30,7 +30,7 @@ namespace RTW
 		imageWidth = width;
 		this->aspectRatio = aspectRatio;
 		this->center = center;
-		initialize();
+		//initialize();
 	}
 
 	void RayCamera::render(const RayList& world)
@@ -116,35 +116,72 @@ namespace RTW
 		RTW_INFO("DONE");
 	}
 
+	void RayCamera::SetViewPerspective(Math::vec3 LookFrom, Math::vec3 LookAt, Math::vec3 Up)
+	{
+		lookFrom = LookFrom;
+		lookAt = LookAt;
+		upVector = Up;
+	}
+
+	void RayCamera::SetFocus(float32 Angle, float32 FocusDistance)
+	{
+		defocusAngle = Angle;
+		focusDistance = FocusDistance;
+	}
+
 	void RayCamera::initialize()
 	{
+		center = lookFrom;
 		imageHeight = imageWidth / aspectRatio;
 		imageHeight = imageHeight < 1 ? 1 : imageHeight;
-		setPerPixelSamples(10);
 
-		float32 focalLength = 1.f;
 		float32 theta = Math::radians(VFov);
 		float32 h = Math::tan(theta / 2);
-		float32 viewportHeight = 2.f * h * focalLength;
+		float32 viewportHeight = 2.f * h * focusDistance;
 		float32 viewportWidth = viewportHeight * (float32(imageWidth) / imageHeight);
 
-		Math::vec3 viewportU = Math::vec3(viewportWidth, .0f, .0f);
-		Math::vec3 viewportV = Math::vec3(.0f, -viewportHeight, .0f);
+		w = (lookFrom - lookAt).Normalize();
+		u = upVector.CrossProduct(w);
+		v = w.CrossProduct(u);
+
+		Math::vec3 viewportU = viewportWidth * u;
+		Math::vec3 viewportV = viewportHeight * v * -1.f;
 
 		pixelUOffset = viewportU / imageWidth;
 		pixelVOffset = viewportV / imageHeight;
 
-		Math::vec3 viewportUL = center - Math::vec3{.0f,.0f,focalLength } - viewportU/2 - viewportV/2;
-		llCorner = viewportUL + .5f * (pixelUOffset + pixelVOffset);
+		Math::vec3 viewportUL = center - (w * focusDistance) - viewportU / 2 - viewportV / 2;
+		ulCorner = viewportUL + .5f * (pixelUOffset + pixelVOffset);
+
+		float64 defocusRadius = focusDistance * Math::tan(Math::radians(defocusAngle / 2.f));
+		defocusDiskU = u * defocusRadius;
+		defocusDiskV = v * defocusRadius;
 	}
 
 	void RayCamera::RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff)
 	{
 		Math::vec3 pixelColor{ 0.f, 0.f, 0.f };
+		const uint32 BackgroundDiscardThreshold = 5;
+		uint32 BackgroundHitsCount = 0;
 		for (int32 sample = 0; sample < PerPixelSamples; sample++)
 		{
 			Ray r = getRay(PixelCoords.x, PixelCoords.y);
-			pixelColor += RayColorTrace(r, world, maxDepth);
+			RayTraceResult traceResult = RayColorTrace(r, world, maxDepth);
+			pixelColor += traceResult.Color;
+
+			if (traceResult.Flags & Background)
+			{
+				BackgroundHitsCount++;
+				if (BackgroundHitsCount > BackgroundDiscardThreshold)
+				{
+					pixelColor = pixelColor / sample * PerPixelSamples;
+					break;
+				};
+			}
+			else
+			{
+				BackgroundHitsCount = 0;
+			}
 		}
 
 		pixelColor = (float32)pixelSamplesScale * pixelColor;
@@ -166,30 +203,42 @@ namespace RTW
 #endif
 	}
 
-	Math::vec3 RayCamera::RayColorTrace(const Ray& r, const RayList& world, int32 Depth)
+	RayTraceResult RayCamera::RayColorTrace(const Ray& r, const RayList& world, int32 Depth)
 	{
+		RayTraceResult result{};
 		if (Depth <= 0)
 		{
-			return { 0.f,0.f,0.f };
-		};
-
-		RTW::HitRecord hitRecord{};
-		if (world.hit(r, 0.001f, Math::MaxFloat64(), hitRecord))
-		{
-			Ray Scattered{};
-			Math::vec3 Attenuation{};
-			if (hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
-			{
-				return Attenuation * RayColorTrace(Scattered, world, Depth - 1);
-			}
-			return Math::vec3{ 0.f };
+			result.Color = { 0.f, 0.f, 0.f };
+			result.Flags = OutOfDepth;
 		}
 		else
 		{
-			RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direciton());
-			float32 t = 0.5f * (unitDirection.y + .5f);
-			return RTW::Math::Lerp({ 1.f,1.f,1.f }, { .2f,.4f,1.f }, t);
+			RTW::HitRecord hitRecord{};
+			if (world.hit(r, 0.001f, Math::MaxFloat64(), hitRecord))
+			{
+				result.Flags = WorldHit;
+
+				Ray Scattered{};
+				Math::vec3 Attenuation{};
+				if (hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
+				{
+					result.Color = Attenuation * RayColorTrace(Scattered, world, Depth - 1).Color;
+				}
+				else
+				{
+					result.Flags = OutOfDepth;
+					result.Color = Math::vec3{ 0.f };
+				};
+			}
+			else
+			{
+				result.Flags = Background;
+				RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direciton());
+				float32 t = 0.5f * (unitDirection.y + .5f);
+				result.Color = RTW::Math::Lerp({ 1.f,1.f,1.f }, { .2f,.4f,1.f }, t);
+			};
 		};
+		return result;
 	}
 
 	Math::vec3 RayCamera::sampleSquare() const {
@@ -197,11 +246,17 @@ namespace RTW
 		return { (float32)(Util::randomDouble() - 0.5), (float32)(Util::randomDouble() - 0.5), .0f };
 	}
 
+	Math::vec3 RayCamera::defocusDiskSample() const
+	{
+		Math::vec3 p = Util::RandomUnitDiskVector();
+		return center + (p[0] * defocusDiskU) + (p[1] * defocusDiskV);
+	}
+
 	Ray RayCamera::getRay(int32 i, int32 j) const
 	{
 		Math::vec3 offset = sampleSquare();
-		Math::vec3 pixelSample = llCorner + ((i + offset.x) * pixelUOffset) + ((j + offset.y) * pixelVOffset);
-		Math::vec3 rayOrigin = center;
+		Math::vec3 pixelSample = ulCorner + ((i + offset.x) * pixelUOffset) + ((j + offset.y) * pixelVOffset);
+		Math::vec3 rayOrigin = (Math::less_or_equal(defocusAngle, 0) ? center : defocusDiskSample());
 		Math::vec3 rayDirection = pixelSample - rayOrigin;
 
 		return Ray(rayOrigin, rayDirection);
