@@ -59,7 +59,7 @@ namespace RTW
 	private:
 
 		void RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff = nullptr);
-		RayTraceResult RayColorTrace(const Ray& r, const RayList& world, int32 Depth);
+		Math::vec3 RayColorTrace(const Ray& r, const RayList& world, int32 Depth);
 		Ray getRay(int32 i, int32 j) const;
 		Math::vec3 sampleSquare() const;
 		Math::vec3 defocusDiskSample() const;

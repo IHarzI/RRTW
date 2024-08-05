@@ -161,27 +161,11 @@ namespace RTW
 	void RayCamera::RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff)
 	{
 		Math::vec3 pixelColor{ 0.f, 0.f, 0.f };
-		const uint32 BackgroundDiscardThreshold = 5;
-		uint32 BackgroundHitsCount = 0;
+
 		for (int32 sample = 0; sample < PerPixelSamples; sample++)
 		{
 			Ray r = getRay(PixelCoords.x, PixelCoords.y);
-			RayTraceResult traceResult = RayColorTrace(r, world, maxDepth);
-			pixelColor += traceResult.Color;
-
-			if (traceResult.Flags & Background)
-			{
-				BackgroundHitsCount++;
-				if (BackgroundHitsCount > BackgroundDiscardThreshold)
-				{
-					pixelColor = pixelColor / sample * PerPixelSamples;
-					break;
-				};
-			}
-			else
-			{
-				BackgroundHitsCount = 0;
-			}
+			pixelColor += RayColorTrace(r, world, maxDepth);
 		}
 
 		pixelColor = (float32)pixelSamplesScale * pixelColor;
@@ -203,42 +187,37 @@ namespace RTW
 #endif
 	}
 
-	RayTraceResult RayCamera::RayColorTrace(const Ray& r, const RayList& world, int32 Depth)
+	Math::vec3 RayCamera::RayColorTrace(const Ray& r, const RayList& world, int32 Depth)
 	{
-		RayTraceResult result{};
 		if (Depth <= 0)
 		{
-			result.Color = { 0.f, 0.f, 0.f };
-			result.Flags = OutOfDepth;
+			return { 0.f, 0.f, 0.f };
 		}
 		else
 		{
 			RTW::HitRecord hitRecord{};
 			if (world.hit(r, 0.001f, Math::MaxFloat64(), hitRecord))
 			{
-				result.Flags = WorldHit;
 
 				Ray Scattered{};
 				Math::vec3 Attenuation{};
 				if (hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
 				{
-					result.Color = Attenuation * RayColorTrace(Scattered, world, Depth - 1).Color;
+					return Attenuation * RayColorTrace(Scattered, world, Depth - 1);
 				}
 				else
 				{
-					result.Flags = OutOfDepth;
-					result.Color = Math::vec3{ 0.f };
+					return Math::vec3{ 0.f };
 				};
 			}
 			else
 			{
-				result.Flags = Background;
 				RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direciton());
 				float32 t = 0.5f * (unitDirection.y + .5f);
-				result.Color = RTW::Math::Lerp({ 1.f,1.f,1.f }, { .2f,.4f,1.f }, t);
+				return RTW::Math::Lerp({ 1.f,1.f,1.f }, { .2f,.4f,1.f }, t);
 			};
 		};
-		return result;
+		return { 0.f };
 	}
 
 	Math::vec3 RayCamera::sampleSquare() const {
