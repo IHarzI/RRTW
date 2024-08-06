@@ -1,10 +1,9 @@
 // RRTW
 //Realtime ray - tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
-//Basic logic is from Ray Tracing in One Weekend.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image(not multhithreaded).
+//Basic logic is from Ray Tracing books.
+//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
-
 #include "RayCamera.h"
 #include "RTW_Util.h"
 #include "RTW_Logger.h"
@@ -21,7 +20,7 @@
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 5;
+const uint32 maxThreads = 3;
 
 namespace RTW
 {
@@ -165,10 +164,8 @@ namespace RTW
 		for (int32 sample = 0; sample < PerPixelSamples; sample++)
 		{
 			Ray r = getRay(PixelCoords.x, PixelCoords.y);
-			pixelColor += RayColorTrace(r, world, maxDepth);
+			pixelColor += RayColorTrace(r, world, maxDepth) * pixelSamplesScale;
 		}
-
-		pixelColor = (float32)pixelSamplesScale * pixelColor;
 
 #if RENDER_MULTITHREAD == 1
 		//std::lock_guard<std::mutex> WriteMutexGuard{ GlobalContext.MultithreadPixelWriteMutex };
@@ -237,7 +234,7 @@ namespace RTW
 		Math::vec3 pixelSample = ulCorner + ((i + offset.x) * pixelUOffset) + ((j + offset.y) * pixelVOffset);
 		Math::vec3 rayOrigin = (Math::less_or_equal(defocusAngle, 0) ? center : defocusDiskSample());
 		Math::vec3 rayDirection = pixelSample - rayOrigin;
-
-		return Ray(rayOrigin, rayDirection);
+		float64 rayTime = Util::randomDouble(0.f, 1.f);
+		return Ray(rayOrigin, rayDirection, rayTime);
 	}
 };

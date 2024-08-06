@@ -1,10 +1,9 @@
 // RRTW
 //Realtime ray - tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
-//Basic logic is from Ray Tracing in One Weekend.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image(not multhithreaded).
+//Basic logic is from Ray Tracing books.
+//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
-
 #include <string>
 #include <filesystem>
 
@@ -18,6 +17,7 @@
 #include <stdio.h>
 
 #include "RTW_Context.h"
+#include "BVHNode.h"
 #include "Containers/RTW_DynamicArray.h"
 #include <thread>
 
@@ -72,7 +72,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     }
     // Setup RTW render
     // -----------------
-    RTW::Containers::DynamicArray<UniqueMemoryHandle<RTW::RayObject>> ObjectList{ 50 };
+    RTW::RayList::ObjectList ObjectList{ 50 };
 
     auto material_ground =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.95, 0.92, 0.05));
     auto material_center =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.9, 0.05, 0.1));
@@ -87,11 +87,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(1.0, 0.0, -1.0), 0.5f,      material_right.Get()).RetrieveResourse());
     // Spawn paradise of spheres
     {
-        const int MaxSpheresLoop = 25;
+        const int MaxSpheresLoop = 15;
         for (int a = -MaxSpheresLoop; a < MaxSpheresLoop; a++) {
             for (int b = -MaxSpheresLoop; b < MaxSpheresLoop; b++) {
                 auto choose_mat = RTW::Util::randomDouble();
-                RTW::Math::vec3 center(a + 0.9 * RTW::Util::randomDouble(), RTW::Util::randomDouble(0.f, 1.f) * a - b, b + 0.9 * RTW::Util::randomDouble());
+                RTW::Math::vec3 center(a + 0.9 * RTW::Util::randomDouble(), RTW::Util::randomDouble(.5f, .9f), b + 0.9 * RTW::Util::randomDouble());
 
                 if ((center - RTW::Math::vec3(4, 0.2, 0)).Lenght() > 0.9) {
                     SharedMemoryHandle<RTW::Material> sphere_material;
@@ -100,6 +100,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                         // diffuse
                         auto albedo = RTW::Util::RandomVector(0.f, 1.f) * RTW::Util::RandomVector(0.f, 1.f);
                         sphere_material = rtw_new<RTW::Materials::Lambertian>(albedo);
+                        auto centerMoved = center + RTW::Math::vec3{ 0.f,(float32)RTW::Util::randomDouble(-1.2f, 1.2f),0.f };
+                        ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(center, centerMoved,0.2, std::move(sphere_material)).RetrieveResourse());
+                        continue;
                     }
                     else if (choose_mat < 0.95) {
                         // metal
@@ -111,23 +114,23 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                         // glass
                         sphere_material = rtw_new<RTW::Materials::Dielectric>(1.5);
                     }
-                    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(center, 0.2, sphere_material).RetrieveResourse());
+                    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(center, 0.2, std::move(sphere_material)).RetrieveResourse());
                 }
             }
         }
     };
-
-    RTW::RayList World{ std::move(ObjectList) };
+    auto BVH = MakeSharedHandle<RTW::BVH_Node>(ObjectList, 0, ObjectList.size());
+    RTW::RayList World{ BVH.Get()};
 
     // Camera init
-    RTW::RayCamera Camera(1200, 16.f/9.f);
+    RTW::RayCamera Camera(920, 16.f/9.f);
     RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
     RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
-    Camera.setPerPixelSamples(10);
-    Camera.setDepth(10);
+    Camera.setPerPixelSamples(400);
+    Camera.setDepth(40);
     Camera.setVFov(20);
-    Camera.SetViewPerspective({ 10,2,3 }, { -1,0,-1 }, { 0,1,0 });
-    Camera.SetFocus(3, 10);
+    Camera.SetViewPerspective({ 13,2,3 }, { 0,0,0 }, { 0,1,0 });
+    Camera.SetFocus(0.6, 10);
     Camera.initialize();
 
     // -----------------

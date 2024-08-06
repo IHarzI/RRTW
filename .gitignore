@@ -368,3 +368,4 @@ FodyWeavers.xsd
 /RTWCore.vcxproj.filters
 /assets/exampleImage.png
 /assets/PinkFilter.png
+*.licenseheader

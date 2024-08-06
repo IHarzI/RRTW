@@ -1,10 +1,9 @@
 // RRTW
 //Realtime ray - tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
-//Basic logic is from Ray Tracing in One Weekend.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image(not multhithreaded).
+//Basic logic is from Ray Tracing books.
+//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
-
 #pragma once
 
 #include "RTW_CORE.h"
@@ -177,6 +176,11 @@ namespace RTW
 		template<typename ValueT>
 		uint64 DynamicArray<ValueT>::PushBack(ValueT value)
 		{
+			if (!MemoryBlock)
+			{
+				Reserve(8);
+			}
+
 			if (MemoryBlock)
 			{
 				if (elementsInside + 1 >= capacity)
@@ -199,6 +203,11 @@ namespace RTW
 		template<typename ValueT>
 		uint64 DynamicArray<ValueT>::EmplaceBack(ValueT&& value)
 		{
+			if (!MemoryBlock)
+			{
+				Reserve(8);
+			}
+
 			if (MemoryBlock)
 			{
 				if (elementsInside + 1 >= capacity)

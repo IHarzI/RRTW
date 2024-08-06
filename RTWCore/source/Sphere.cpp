@@ -1,17 +1,17 @@
 // RRTW
 //Realtime ray - tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
-//Basic logic is from Ray Tracing in One Weekend.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image(not multhithreaded).
+//Basic logic is from Ray Tracing books.
+//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
-
 #include "Sphere.h"
 
 namespace RTW
 {
 	bool Sphere::hit(const Ray& r, float32 tMin, float32 tMax, HitRecord& rec) const
 	{
-		Math::vec3 oc = r.origin() - center;
+		Math::vec3 realCenter = isMoving ? CalculateCenterFromTime(r.tm) : center;
+		Math::vec3 oc = r.origin() - realCenter;
 		float32 a = Math::DotProduct(r.direciton(), r.direciton());
 		float32 b = Math::DotProduct(oc, r.direciton());
 		float32 c = Math::DotProduct(oc, oc) - radius * radius;
@@ -39,7 +39,7 @@ namespace RTW
 				rec.t = temp;
 				rec.p = r.pointAtScalar(rec.t);
 				rec.setFaceNormal(r, (rec.p - center) / radius);
-				rec.mat = material.Get();
+				rec.mat = material;
 				return true;
 			}
 		}

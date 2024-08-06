@@ -1,10 +1,9 @@
 // RRTW
 //Realtime ray - tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
-//Basic logic is from Ray Tracing in One Weekend.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image(not multhithreaded).
+//Basic logic is from Ray Tracing books.
+//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
-
 #pragma once
 
 #include "RTW_CORE.h"
@@ -346,6 +345,8 @@ public:
 
 	bool IsValid() const
 	{
+		RTW_ASSERT(!Data || Data && RefMap->find(Data) != RefMap->end());
+
 		return Data != nullptr;
 	}
 
@@ -447,6 +448,7 @@ private:
 		}
 		else
 		{
+			REFERENCE_INTERLOCK_GUARD
 			RefMap->insert({ DataToHandle, 1 });
 		}
 
@@ -474,6 +476,7 @@ private:
 
 	void ReleaseResourseChecked()
 	{
+		RTW_ASSERT(!Data || Data && RefMap);
 		if (Data && RefMap)
 		{
 			REFERENCE_INTERLOCK_GUARD
@@ -498,6 +501,126 @@ private:
 	using ValuePtr = T*;
 	using RefMapType = std::unordered_map<ValuePtr, RefCount>;
 	RTW_STATIC RTW_INLINE RefMapType* RefMap = nullptr;
+};
+
+
+template <typename T>
+struct WeakMemoryHandle
+{
+	WeakMemoryHandle() : Data(nullptr) {};
+
+	WeakMemoryHandle(const WeakMemoryHandle& OtherHandle)
+	{
+		Data = OtherHandle.Data;
+	}
+
+	WeakMemoryHandle(const SharedMemoryHandle<T>& SharedHandle)
+	{
+		Data = SharedHandle.Get();
+	}
+
+	WeakMemoryHandle& operator=(const WeakMemoryHandle& OtherHandle)
+	{
+		Data = OtherHandle.Data;
+		return *this;
+	}
+
+	WeakMemoryHandle(WeakMemoryHandle& OtherHandle)
+	{
+		Data = OtherHandle.Data;
+	}
+
+	WeakMemoryHandle& operator=(WeakMemoryHandle&& OtherHandle)
+	{
+		Data = OtherHandle.Data;
+		return *this;
+	}
+
+	~WeakMemoryHandle()
+	{}
+
+	bool IsValid() const { return Data != nullptr && CheckRefCount(Data); }
+
+	T* Get() const { return Data; };
+
+	T& GetReference() { RTW_ASSERT(IsValid()); return *Data; };
+
+	void Reset(SharedMemoryHandle<T>& SharedHandle)
+	{
+		Data = SharedHandle.Get();
+	}
+
+	explicit operator bool() const {
+		return IsValid();
+	}
+
+	bool operator==(T* DataPtr)
+	{
+		return Data == DataPtr;
+	}
+
+	bool operator==(WeakMemoryHandle<T>& OtherHandle)
+	{
+		return Data == OtherHandle.Data;
+	}
+
+	bool operator==(SharedMemoryHandle<T>& OtherHandle)
+	{
+		return Data == OtherHandle.Get();
+	}
+
+	bool operator!=(T* DataPtr)
+	{
+		return !(Data == DataPtr);
+	}
+
+	bool operator!=(WeakMemoryHandle<T>& OtherHandle)
+	{
+		return !(Data == OtherHandle.Data);
+	}
+
+	bool operator!=(SharedMemoryHandle<T>& OtherHandle)
+	{
+		return !(Data == OtherHandle.Data);
+	}
+
+	T& operator*() const {
+		return GetReference();
+	}
+
+	T* operator->() const {
+		return Get();
+	}
+
+	T& operator*() {
+		return GetReference();
+	}
+
+	T* operator->() {
+		return Get();
+	}
+
+private:
+
+	bool CheckRefCount(T* Ptr) const
+	{
+#ifdef RTW_BUILD_DEBUG
+
+		if (SharedMemoryHandle<T>::RefMap &&
+			SharedMemoryHandle<T>::RefMap->find(Ptr) != SharedMemoryHandle<T>::RefMap->end()
+			&& SharedMemoryHandle<T>::RefMap->find(Ptr)->second > 0)
+		{
+			return true;
+		}
+
+		return false
+#else
+		return true;
+#endif
+	}
+
+	T* Data = nullptr;
+	using ValuePtr = T*;
 };
 
 template<typename T, typename ...Args>

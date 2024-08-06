@@ -1,10 +1,9 @@
 // RRTW
 //Realtime ray - tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
-//Basic logic is from Ray Tracing in One Weekend.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image(not multhithreaded).
+//Basic logic is from Ray Tracing books.
+//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
-
 #pragma once
 
 #include "RTW_CORE.h"
@@ -43,17 +42,19 @@ namespace RTW
 			return .0;
 		}
 
-		// Returns float64 in range -1.f to 1.f
+		// Returns float64 in range .0f to 1.f
 		RTW_STATIC RTW_INLINE float64 randomDoubleGenerate() {
 			RTW_STATIC std::uniform_real_distribution<float64> distribution(0.f, 1.f);
 			RTW_STATIC std::mt19937 generator;
 			return distribution(generator);
 		}
 
-		// Return random duoble in clamped range. Note, that raw random value is in range -1.f to 1.f, therefore, min/max more that abs(1.f) is meanless.
-		// For getting bigger flaot, just multiply by int
 		RTW_STATIC RTW_INLINE float64 randomDouble(float64 min = 0.f, float64 max = 1.f) {
 			return min + (max - min) * randomDoubleGenerate();
+		}
+
+		RTW_STATIC RTW_INLINE int32 randomInt(float64 min = 0.f, float64 max = 1.f) {
+			return (int32)randomDouble(min, max + 1.f);
 		}
 
 		RTW_STATIC RTW_INLINE Math::vec3 RandomVector(float32 min, float32 max)

@@ -1,10 +1,9 @@
 // RRTW
 //Realtime ray - tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
-//Basic logic is from Ray Tracing in One Weekend.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image(not multhithreaded).
+//Basic logic is from Ray Tracing books.
+//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
-
 #include "RTW_Material.h"
 #include "RayObject.h"
 
@@ -21,7 +20,7 @@ namespace RTW {
 				ScatterDirection = rec->normal;
 			}
 
-			*scattered = Ray(rec->p, ScatterDirection);
+			*scattered = Ray(rec->p, ScatterDirection, rayIn->tm);
 			attenuation = albedo;
 			return true;
 		}
@@ -30,7 +29,7 @@ namespace RTW {
 		{
 			Math::vec3 Reflected = rayIn->direciton().Reflect(rec->normal);
 			Reflected = Reflected.GetNormalized() + (Util::RandomUnitSphereUnitVector() * Fuzz);
-			*scattered = Ray(rec->p, Reflected);
+			*scattered = Ray(rec->p, Reflected, rayIn->tm);
 			attenuation = albedo;
 			return Math::more(scattered->direciton().DotProduct(rec->normal), 0);
 		}
@@ -55,7 +54,7 @@ namespace RTW {
 				Direction = normalizedDirection.Refract(rec->normal, ri);
 			}
 
-			*scattered = Ray(rec->p, Direction);
+			*scattered = Ray(rec->p, Direction, rayIn->tm);
 			return true;
 		}
 	}

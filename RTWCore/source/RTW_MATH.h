@@ -377,6 +377,12 @@ namespace harz {
 			return std::numeric_limits<double>::max();
 		}
 
+		template<typename number_t>
+		MATHARZ_INLINE number_t infinity()
+		{
+			return std::numeric_limits<number_t>::infinity();
+		}
+
 		template<typename number_t, typename other_number_t>
 		MATHARZ_INLINE number_t pow(number_t value, other_number_t exp)
 		{
@@ -1418,6 +1424,26 @@ namespace harz {
 		}
 		template<typename number_t>
 		MATHARZ_INLINE template_vec3<number_t> operator-(number_t a, const template_vec3<number_t>& vec)
+		{
+			return vec.ScalarSubtract(a);
+		}
+		template<typename number_t, typename other_number_t>
+		MATHARZ_INLINE template_vec3<number_t> operator*(other_number_t a, const template_vec3<number_t>& vec)
+		{
+			return vec.ScalarMultiply(a);
+		}
+		template<typename number_t, typename other_number_t>
+		MATHARZ_INLINE template_vec3<number_t> operator/(other_number_t a, const template_vec3<number_t>& vec)
+		{
+			return vec.ScalarDivide(a);
+		}
+		template<typename number_t, typename other_number_t>
+		MATHARZ_INLINE template_vec3<number_t> operator+(other_number_t a, const template_vec3<number_t>& vec)
+		{
+			return vec.ScalarAdd(a);
+		}
+		template<typename number_t, typename other_number_t>
+		MATHARZ_INLINE template_vec3<number_t> operator-(other_number_t a, const template_vec3<number_t>& vec)
 		{
 			return vec.ScalarSubtract(a);
 		}
