@@ -120,7 +120,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         }
     };
     auto BVH = MakeSharedHandle<RTW::BVH_Node>(ObjectList, 0, ObjectList.size());
-    RTW::RayList World{ std::move(ObjectList) };
+    RTW::RayList World{ BVH.Get()};
 
     // Camera init
     RTW::RayCamera Camera(920, 16.f/9.f);
