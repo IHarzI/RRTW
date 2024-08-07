@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #pragma once
 
@@ -44,8 +43,8 @@ namespace RTW
 			}
 
 		};
-		RTW_STATIC RTW_INLINE const Interval empty{ RTW::Math::infinity<float64>(), -RTW::Math::infinity<float64>() };
-		RTW_STATIC RTW_INLINE const Interval universe{ -RTW::Math::infinity<float64>(), RTW::Math::infinity<float64>() };
+		RTW_STATIC RTW_INLINE const Interval interval_empty{ RTW::Math::infinity<float64>(), -RTW::Math::infinity<float64>() };
+		RTW_STATIC RTW_INLINE const Interval interval_universe{ -RTW::Math::infinity<float64>(), RTW::Math::infinity<float64>() };
 
 		struct AABB {
 			union
@@ -80,6 +79,16 @@ namespace RTW
 				return intervals[n];
 			}
 
+			int32 longestAxis() const
+			{
+				if (x.size() > y.size())
+				{
+					return x.size() > z.size() ? 0 : 2;
+				}
+				else
+					return y.size() > z.size() ? 1 : 2;
+			}
+
 			bool overlap(const Ray& r, Interval rayT) const
 			{
 				const Math::vec3 rayOrigin = r.origin();
@@ -112,5 +121,7 @@ namespace RTW
 				}
 			}
 		};
+		RTW_STATIC RTW_INLINE const AABB AABB_empty{ interval_empty,interval_empty,interval_empty };
+		RTW_STATIC RTW_INLINE const AABB AABB_universe{ interval_universe,interval_universe,interval_universe };
 	};
 }

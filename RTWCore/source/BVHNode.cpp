@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #include "BVHNode.h"
 #include "RTW_Util.h"
@@ -13,7 +12,14 @@ namespace RTW
 {
     BVH_Node::BVH_Node(const RayList::ObjectList& List, uint64 start, uint64 end)
     {
-        int32 axis = Util::randomInt(0, 2);
+        bBox = D3Math::AABB_empty;
+        for (uint64 objectIndex = start; objectIndex < end; objectIndex++)
+        {
+            bBox = D3Math::AABB(bBox, List[objectIndex]->boundingBox());
+        }
+
+        int32 axis = bBox.longestAxis();
+
         bool (*comparators[3])(RayList::ObjectHandle, RayList::ObjectHandle) = {
         [](RayList::ObjectHandle a, RayList::ObjectHandle b) -> bool {return BVH_Node::boxCompare(a,b,0); } ,
         [](RayList::ObjectHandle a, RayList::ObjectHandle b) -> bool {return BVH_Node::boxCompare(a,b,1); } ,
@@ -38,7 +44,6 @@ namespace RTW
             left = rtw_new<BVH_Node>(List, start, mid);
             right = rtw_new<BVH_Node>(List, mid, end);
         }
-        bBox = D3Math::AABB{ left->boundingBox(), right->boundingBox() };
     }
 
     bool BVH_Node::hit(const Ray& r, float32 tMin, float32 tMax, HitRecord& rec) const

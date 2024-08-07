@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #include "RTW_Material.h"
 #include "RayObject.h"
@@ -11,7 +10,7 @@ namespace RTW {
 
 	namespace Materials {
 
-		bool Lambertian::scatter(const Ray* rayIn, const HitRecord* rec, Math::vec3& attenuation, Ray* scattered) const
+		bool Lambertian::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
 		{
 			Math::vec3 ScatterDirection = rec->normal + Util::RandomUnitSphereUnitVector();
 
@@ -21,11 +20,11 @@ namespace RTW {
 			}
 
 			*scattered = Ray(rec->p, ScatterDirection, rayIn->tm);
-			attenuation = albedo;
+			attenuation = tex->value(rec->U,rec->V,rec->p);
 			return true;
 		}
 
-		bool Metal::scatter(const Ray* rayIn, const HitRecord* rec, Math::vec3& attenuation, Ray* scattered) const
+		bool Metal::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
 		{
 			Math::vec3 Reflected = rayIn->direciton().Reflect(rec->normal);
 			Reflected = Reflected.GetNormalized() + (Util::RandomUnitSphereUnitVector() * Fuzz);
@@ -33,7 +32,7 @@ namespace RTW {
 			attenuation = albedo;
 			return Math::more(scattered->direciton().DotProduct(rec->normal), 0);
 		}
-		bool Dielectric::scatter(const Ray* rayIn, const HitRecord* rec, Math::vec3& attenuation, Ray* scattered) const
+		bool Dielectric::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
 		{
 			attenuation = { 1.f};
 			float64 ri = rec->frontFace ? (1.0 / refractionIndex) : refractionIndex;

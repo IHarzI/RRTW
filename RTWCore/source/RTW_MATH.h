@@ -383,6 +383,24 @@ namespace harz {
 			return std::numeric_limits<number_t>::infinity();
 		}
 
+		template<typename number_t, typename result_t = int>
+		MATHARZ_INLINE number_t floor(number_t x)
+		{
+			return std::floor(x);
+		}
+
+		template <typename result_t = int>
+		MATHARZ_INLINE result_t floor(double x)
+		{
+			return std::floor(x);
+		}
+
+		template <typename result_t = int>
+		MATHARZ_INLINE result_t floor(float x)
+		{
+			return std::floorf(x);
+		}
+
 		template<typename number_t, typename other_number_t>
 		MATHARZ_INLINE number_t pow(number_t value, other_number_t exp)
 		{
@@ -3044,6 +3062,7 @@ namespace RTW
 		using namespace harz::math;
 #define harz DONTUSETHISNAMESPACE_ONLYFORINTERNALUSE
 #undef matharz
+		using color = template_vec3<float>;
 	}
 }
 

@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #include "RayCamera.h"
 #include "RTW_Util.h"
@@ -20,7 +19,7 @@
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 3;
+const uint32 maxThreads = 13;
 
 namespace RTW
 {
@@ -62,14 +61,14 @@ namespace RTW
 
 				for (int32 YPixelIndex = YStartThreadOffset; YPixelIndex < YEndThreadOffset; YPixelIndex++)
 				{
-					if (!RTW::GetRTWGlobalState().IsRunning)
-					{
-						RTW_INFO("Rendering canceled, threadID: %i", std::this_thread::get_id());
-						return;
-					}
 
 					for (int32 XPixelIndex = 0; XPixelIndex < imageWidth; XPixelIndex++)
 					{
+						if (!RTW::GetRTWGlobalState().IsRunning)
+						{
+							RTW_INFO("Rendering canceled, threadID: %i", std::this_thread::get_id());
+							return;
+						}
 						//RTW_INFO("THREAD ID : %i  COORDS{X: %i, Y: %i}\n\0", std::this_thread::get_id(), XPixelIndex, YPixelIndex);
 						RenderPixel(world, { XPixelIndex,YPixelIndex }, maxDepth, CharImageBuffPtr);
 					}
@@ -159,7 +158,7 @@ namespace RTW
 
 	void RayCamera::RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff)
 	{
-		Math::vec3 pixelColor{ 0.f, 0.f, 0.f };
+		Math::color pixelColor{ 0, 0, 0 };
 
 		for (int32 sample = 0; sample < PerPixelSamples; sample++)
 		{
@@ -184,11 +183,11 @@ namespace RTW
 #endif
 	}
 
-	Math::vec3 RayCamera::RayColorTrace(const Ray& r, const RayList& world, int32 Depth)
+	Math::color RayCamera::RayColorTrace(const Ray& r, const RayList& world, int32 Depth)
 	{
 		if (Depth <= 0)
 		{
-			return { 0.f, 0.f, 0.f };
+			return { 0, 0, 0 };
 		}
 		else
 		{
@@ -197,21 +196,21 @@ namespace RTW
 			{
 
 				Ray Scattered{};
-				Math::vec3 Attenuation{};
+				Math::color Attenuation{};
 				if (hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
 				{
 					return Attenuation * RayColorTrace(Scattered, world, Depth - 1);
 				}
 				else
 				{
-					return Math::vec3{ 0.f };
+					return Math::color{ 0 };
 				};
 			}
 			else
 			{
 				RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direciton());
-				float32 t = 0.5f * (unitDirection.y + .5f);
-				return RTW::Math::Lerp({ 1.f,1.f,1.f }, { .2f,.4f,1.f }, t);
+				float64 t = 0.5f * (unitDirection.y + .5f);
+				return (Math::color)RTW::Math::Lerp({ 1,1,1 }, { .2,.4,1 }, t);
 			};
 		};
 		return { 0.f };

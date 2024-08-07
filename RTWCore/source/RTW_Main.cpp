@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #include <string>
 #include <filesystem>
@@ -74,40 +73,50 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     // -----------------
     RTW::RayList::ObjectList ObjectList{ 50 };
 
-    auto material_ground =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.95, 0.92, 0.05));
-    auto material_center =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::vec3(0.9, 0.05, 0.1));
+    auto material_center =  MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::color(0.9, 0.05, 0.1));
     auto material_left   =  MakeSharedHandle<RTW::Materials::Dielectric>(1.5);
     auto material_bubble =  MakeSharedHandle<RTW::Materials::Dielectric>(1.0/1.5);
-    auto material_right  =  MakeSharedHandle<RTW::Materials::Metal>(RTW::Math::vec3(0.05, 0.85, 0.92), 0.56f);
+    auto material_right  =  MakeSharedHandle<RTW::Materials::Metal>(RTW::Math::color(0.05, 0.85, 0.92), 0.56f);
+    auto texture_cheker =   MakeSharedHandle<RTW::Textures::CheckerTexture>(0.32, RTW::Math::color{ .1,.05,.2 }, RTW::Math::color{ .9,.9,.9 });
+    auto material_ground =  MakeSharedHandle<RTW::Materials::Lambertian>(texture_cheker.Get());
 
-    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, -100.5, -1.0), 100.f, material_ground.Get()).RetrieveResourse());
-    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, 0.0, -1.2), 0.5f,      material_center.Get()).RetrieveResourse());
-    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(-1.0, 0.0, -1.0), 0.5f,     material_left.Get()).RetrieveResourse());
-    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(-1.0, 0.0, -1.0), 0.4f,     material_bubble.Get()).RetrieveResourse());
-    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(1.0, 0.0, -1.0), 0.5f,      material_right.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0.0, -1002.5, -1.0), 1000, material_ground.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(-4.0, 1, 0), 0.5,      material_center.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0, 1.0, 0), 1.2,     material_left.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0, 1.0, 0), 0.85,     material_bubble.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(0, 1.0, 0), 0.35, material_left.Get()).RetrieveResourse());
+    ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3(4.0, 1.0, 0), 0.5,      material_right.Get()).RetrieveResourse());
     // Spawn paradise of spheres
     {
-        const int MaxSpheresLoop = 15;
+        const int MaxSpheresLoop = 10;
         for (int a = -MaxSpheresLoop; a < MaxSpheresLoop; a++) {
             for (int b = -MaxSpheresLoop; b < MaxSpheresLoop; b++) {
                 auto choose_mat = RTW::Util::randomDouble();
-                RTW::Math::vec3 center(a + 0.9 * RTW::Util::randomDouble(), RTW::Util::randomDouble(.5f, .9f), b + 0.9 * RTW::Util::randomDouble());
+                RTW::Math::vec3 center(a + 0.9 * RTW::Util::randomDouble(), .2f, b + 0.9 * RTW::Util::randomDouble());
 
                 if ((center - RTW::Math::vec3(4, 0.2, 0)).Lenght() > 0.9) {
                     SharedMemoryHandle<RTW::Material> sphere_material;
 
                     if (choose_mat < 0.8) {
                         // diffuse
-                        auto albedo = RTW::Util::RandomVector(0.f, 1.f) * RTW::Util::RandomVector(0.f, 1.f);
-                        sphere_material = rtw_new<RTW::Materials::Lambertian>(albedo);
-                        auto centerMoved = center + RTW::Math::vec3{ 0.f,(float32)RTW::Util::randomDouble(-1.2f, 1.2f),0.f };
-                        ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(center, centerMoved,0.2, std::move(sphere_material)).RetrieveResourse());
+                        auto albedo = RTW::Util::RandomColor(0, 1) * RTW::Util::RandomColor(0., 1.);
+                        auto texture_cheker = MakeSharedHandle<RTW::Textures::CheckerTexture>(RTW::Util::randomDouble(0.04,0.12), albedo, RTW::Math::color{.05,.05,.05});
+                        sphere_material = rtw_new<RTW::Materials::Lambertian>(texture_cheker.Get());
+                        if (RTW::Util::randomDouble() > 0.7)
+                        {
+                            auto centerMoved = center + RTW::Math::vec3{ 0,(float32)RTW::Util::randomDouble(-.01, .01),0 };
+                            ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(center, centerMoved, RTW::Util::randomDouble(0.1,0.3), std::move(sphere_material)).RetrieveResourse());
+                        }
+                        else
+                        {
+                            ObjectList.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(center, RTW::Util::randomDouble(0.12,0.34), std::move(sphere_material)).RetrieveResourse());
+                        }
                         continue;
                     }
                     else if (choose_mat < 0.95) {
                         // metal
-                        auto albedo = RTW::Util::RandomVector(0.5f, 1.f);
-                        auto fuzz = RTW::Util::randomDouble(0.f, 0.5f);
+                        auto albedo = RTW::Util::RandomColor(0.5, 1);
+                        auto fuzz = RTW::Util::randomDouble(0, 0.5);
                         sphere_material = rtw_new<RTW::Materials::Metal>(albedo, fuzz);
                     }
                     else {
@@ -123,14 +132,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     RTW::RayList World{ BVH.Get()};
 
     // Camera init
-    RTW::RayCamera Camera(920, 16.f/9.f);
+    RTW::RayCamera Camera(800, 16.f/9.f);
     RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
     RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
     Camera.setPerPixelSamples(400);
-    Camera.setDepth(40);
+    Camera.setDepth(50);
     Camera.setVFov(20);
-    Camera.SetViewPerspective({ 13,2,3 }, { 0,0,0 }, { 0,1,0 });
-    Camera.SetFocus(0.6, 10);
+    Camera.SetViewPerspective({ 13,2,3 }, { 0.2,0.7,0.3 }, { 0,1,0 });
+    Camera.SetFocus(0.2, 10);
     Camera.initialize();
 
     // -----------------

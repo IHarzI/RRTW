@@ -1,14 +1,14 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #pragma once
 
 #include "RTW_CORE.h"
 #include "RTW_MATH.h"
 #include "RTW_Util.h"
+#include "RTW_Texture.h"
 
 namespace RTW
 {
@@ -20,7 +20,7 @@ namespace RTW
 	public:
 		virtual ~Material() = default;
 
-		virtual bool scatter(const Ray* rayIn, const HitRecord* rec, Math::vec3& attenuation, Ray* scattered) const
+		virtual bool scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
 		{
 			return false;
 		}
@@ -31,21 +31,22 @@ namespace RTW
 		class Lambertian : public Material
 		{
 		public:
-			Lambertian(const Math::vec3& albedo) : albedo(albedo) {};
+			Lambertian(const Math::color& albedo) : tex(rtw_new<Textures::SolidColor>(albedo)) {};
+			Lambertian(SharedMemoryHandle<RTW_Texture> tex) : tex(tex) {};
 
-			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::vec3& attenuation, Ray* scattered) const override;
+			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const override;
 		private:
-			Math::vec3 albedo;
+			SharedMemoryHandle<RTW_Texture> tex;
 		};
 
 		class Metal : public Material
 		{
 		public:
-			Metal(const Math::vec3& albedo, float64 FuzzFactor) : albedo(albedo), Fuzz(FuzzFactor < 1 ? FuzzFactor : 1) {};
+			Metal(const Math::color& albedo, float64 FuzzFactor) : albedo(albedo), Fuzz(FuzzFactor < 1 ? FuzzFactor : 1) {};
 
-			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::vec3& attenuation, Ray* scattered) const override;
+			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const override;
 		private:
-			Math::vec3 albedo;
+			Math::color albedo;
 			float64 Fuzz;
 		};
 
@@ -54,7 +55,7 @@ namespace RTW
 		public:
 			Dielectric(float64 refractionIndex) : refractionIndex(refractionIndex) {};
 			
-			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::vec3& attenuation, Ray* scattered) const override;
+			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const override;
 		private:
 			float64 refractionIndex;
 		};

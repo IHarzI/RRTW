@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #pragma once
 
@@ -58,7 +57,7 @@ namespace RTW
 	private:
 
 		void RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff = nullptr);
-		Math::vec3 RayColorTrace(const Ray& r, const RayList& world, int32 Depth);
+		Math::color RayColorTrace(const Ray& r, const RayList& world, int32 Depth);
 		Ray getRay(int32 i, int32 j) const;
 		Math::vec3 sampleSquare() const;
 		Math::vec3 defocusDiskSample() const;

@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #pragma once
 
@@ -25,12 +24,33 @@ RTW_STATIC void rtw_delete(T* address) noexcept;
 
 #define REFERENCE_INTERLOCK_GUARD std::lock_guard<std::mutex> InterlockGuard{RTW::Memory::detail::GetInterlockedMutex()};
 
+
+#define RTW_MEMORY_REF_INTRLK_GRD_DEC_U64(value) RTW::Memory::detail::ReferenceDecrementInterlocked(value)
+#define RTW_MEMORY_REF_INTRLK_GRD_INCR_U64(value) RTW::Memory::detail::ReferenceIncrementInterlocked(value)
+#define RTW_MEMORY_REF_INTRLK_GRD_GET_U64(value) RTW::Memory::detail::ReferenceGetValueInterlocked(value)
+#define RTW_MEMORY_REFMAP_INTRLK_GRD_GETREF_U64(value) RTW::Memory::detail::RefMapGetValueInterlocked(value, *RTW::Memory::detail::RefMap)
+#define RTW_MEMORY_REFMAP RTW::Memory::detail::RefMap
+
 namespace RTW
 {
 	namespace Memory {
 		namespace detail
 		{
+			using RefCount = uint64;
+			using ValuePtr = void*;
+			using RefMapType = std::unordered_map<void*, uint64>;
+			RTW_STATIC RTW_INLINE RefMapType* RefMap = nullptr;
+
 			RTW_STATIC RTW_INLINE std::mutex& GetInterlockedMutex() { RTW_STATIC std::mutex InterlockedMutex{}; return InterlockedMutex; }
+
+			RTW_STATIC RTW_INLINE uint64* RefMapGetValueInterlocked(void* address, std::unordered_map<void*, uint64>& RefMap) {
+				REFERENCE_INTERLOCK_GUARD
+				if (auto RefCounterToData = RefMap.find(address); RefCounterToData != RefMap.end())
+				{
+					return &RefCounterToData->second;
+				}
+				return nullptr;
+			}
 
 			RTW_STATIC RTW_INLINE void ReferenceIncrementInterlocked(uint64& ref) {
 				REFERENCE_INTERLOCK_GUARD
@@ -61,8 +81,12 @@ namespace RTW
 
 			RTW_STATIC RTW_INLINE bool Deallocate(void* allocation)
 			{
-				free(allocation);
-				return true;
+				if (allocation)
+				{
+					free(allocation);
+					return true;
+				};
+				return false;
 			};
 		};
 
@@ -74,9 +98,11 @@ namespace RTW
 template <typename T>
 RTW_STATIC void rtw_delete(T* address) noexcept
 {
-	RTW_ASSERT_MSG(address, "Invalid poitner to delete!");
-	address->~T();
-	RTW::Memory::MallocAllocator::Deallocate(address);
+	if (address)
+	{
+		address->~T();
+		RTW::Memory::MallocAllocator::Deallocate(address);
+	};
 }
 
 // Allocate memory block of <T> object size and call <T> constructor with arguments in-place 
@@ -101,7 +127,7 @@ public:
 	template <typename ...Args>
 	RTW_STATIC UniqueMemoryHandle Create(Args&&... args)
 	{
-		return UniqueMemoryHandle((T*)(rtw_new<T>(args...)));
+		return (T*)(rtw_new<T>(args...));
 	}
 
 	UniqueMemoryHandle() : Data(nullptr) {};
@@ -275,14 +301,14 @@ public:
 	template <typename ...Args>
 	RTW_STATIC SharedMemoryHandle Create(Args&&... args)
 	{
-		return SharedMemoryHandle((T*)(rtw_new<T>(args...)));
+		return (T*)(rtw_new<T>(args...));
 	}
 
 	SharedMemoryHandle() : Data(nullptr) {};
 
 	SharedMemoryHandle(const SharedMemoryHandle& OtherHandle)
 	{
-		AcquireDataToHandle(OtherHandle.Get());
+		AcquireDataToHandle(OtherHandle.Data);
 	}
 
 	SharedMemoryHandle& operator=(const SharedMemoryHandle& OtherHandle)
@@ -299,10 +325,6 @@ public:
 
 	SharedMemoryHandle(SharedMemoryHandle& OtherHandle)
 	{
-		if (IsValid())
-		{
-			Release();
-		}
 		AcquireDataToHandle(OtherHandle.Data);
 	}
 
@@ -345,7 +367,7 @@ public:
 
 	bool IsValid() const
 	{
-		RTW_ASSERT(!Data || Data && RefMap->find(Data) != RefMap->end());
+		RTW_ASSERT(!Data || Data && RTW_MEMORY_REFMAP && RTW_MEMORY_REFMAP->find(Data) != RTW_MEMORY_REFMAP->end());
 
 		return Data != nullptr;
 	}
@@ -442,14 +464,15 @@ private:
 
 		InitCheckedRefMap();
 
-		if (auto RefCounterToData = RefMap->find(DataToHandle); RefCounterToData != RefMap->end())
+
+		if (uint64* RefCount = RTW_MEMORY_REFMAP_INTRLK_GRD_GETREF_U64(DataToHandle))
 		{
-			RTW::Memory::detail::ReferenceIncrementInterlocked(RefCounterToData->second);
+			RTW_MEMORY_REF_INTRLK_GRD_INCR_U64(*RefCount);
 		}
 		else
 		{
 			REFERENCE_INTERLOCK_GUARD
-			RefMap->insert({ DataToHandle, 1 });
+			RTW_MEMORY_REFMAP->insert({ DataToHandle, 1 });
 		}
 
 		Data = DataToHandle;
@@ -457,37 +480,37 @@ private:
 
 	void InitCheckedRefMap()
 	{
-		if (!RefMap)
+		if (!RTW_MEMORY_REFMAP)
 		{
 			REFERENCE_INTERLOCK_GUARD
-			RefMap = rtw_new<RefMapType>();
-			RTW_ASSERT(RefMap);
+			RTW_MEMORY_REFMAP = rtw_new<RTW::Memory::detail::RefMapType>();
+			RTW_ASSERT(RTW_MEMORY_REFMAP);
 		}
 	}
 
 	void ReleaseRefMapIfEmpty()
 	{
-		if (RefMap && RefMap->size() < 1)
+		if (RTW_MEMORY_REFMAP && RTW_MEMORY_REFMAP->empty())
 		{
-			rtw_delete(RefMap);
-			RefMap = nullptr;
+			REFERENCE_INTERLOCK_GUARD
+			rtw_delete(RTW_MEMORY_REFMAP);
+			RTW_MEMORY_REFMAP = nullptr;
 		}
 	}
 
 	void ReleaseResourseChecked()
 	{
-		RTW_ASSERT(!Data || Data && RefMap);
-		if (Data && RefMap)
+		RTW_ASSERT(!Data || Data && RTW_MEMORY_REFMAP);
+		if (Data && RTW_MEMORY_REFMAP)
 		{
-			REFERENCE_INTERLOCK_GUARD
-			auto RefCounterToData = RefMap->find(Data);
-			RTW_ASSERT(RefCounterToData != RefMap->end());
-			if (RefCounterToData != RefMap->end())
+			auto RefCounterToData = RTW_MEMORY_REFMAP->find(Data);
+			RTW_ASSERT(RefCounterToData != RTW_MEMORY_REFMAP->end());
+			if (RefCounterToData != RTW_MEMORY_REFMAP->end())
 			{
-				RefCounterToData->second--;
-				if (RefCounterToData->second < 1)
+				RTW_MEMORY_REF_INTRLK_GRD_DEC_U64(RefCounterToData->second);
+				if (RTW_MEMORY_REF_INTRLK_GRD_GET_U64(RefCounterToData->second) < 1)
 				{
-					RefMap->erase(Data);
+					RTW_MEMORY_REFMAP->erase(Data);
 					rtw_delete(Data);
 					ReleaseRefMapIfEmpty();
 				}
@@ -497,10 +520,6 @@ private:
 	}
 
 	T* Data = nullptr;
-	using RefCount = uint64;
-	using ValuePtr = T*;
-	using RefMapType = std::unordered_map<ValuePtr, RefCount>;
-	RTW_STATIC RTW_INLINE RefMapType* RefMap = nullptr;
 };
 
 

@@ -1,8 +1,7 @@
 // RRTW
-//Realtime ray - tracer, maded as experiment / learning project.
+//Ray-tracer, maded as experiment / learning project.
 //@2024 (IHarzI)Maslianka Zakhar
 //Basic logic is from Ray Tracing books.
-//For now, ray - tracer is multithreaded, Window native api used as output Window, with possible custom output to PPm image.
 //WIP.
 #pragma once
 
@@ -29,13 +28,13 @@ namespace RTW
 			"%03d %03d %03d\n"
 		};
 
-		void writeColor(char* ImageCharBuff, const Math::vec3 color, const Math::vec2i imageSize, const Math::vec2i PixelCoords);
+		void writeColor(char* ImageCharBuff, const Math::color color, const Math::vec2i imageSize, const Math::vec2i PixelCoords);
 
-		void writePixelColor(uint32* Pixel, Math::vec3 color);
+		void writePixelColor(uint32* Pixel, Math::color color);
 
 		RTW_STATIC RTW_INLINE float64 linearToGamma(float64 linearComponent)
 		{
-			if (Math::more(linearComponent, 0.f))
+			if (Math::more(linearComponent, 0))
 			{
 				return Math::sqrt(linearComponent);
 			}
@@ -54,17 +53,22 @@ namespace RTW
 		}
 
 		RTW_STATIC RTW_INLINE int32 randomInt(float64 min = 0.f, float64 max = 1.f) {
-			return (int32)randomDouble(min, max + 1.f);
+			return (int32)randomDouble(min, max + 1);
 		}
 
-		RTW_STATIC RTW_INLINE Math::vec3 RandomVector(float32 min, float32 max)
+		RTW_STATIC RTW_INLINE Math::vec3 RandomVector(float64 min, float64 max)
 		{
 			Math::vec3 Result = {
-				(float32)randomDouble(min,max),
-				(float32)randomDouble(min,max),
-				(float32)randomDouble(min,max)
+				randomDouble(min,max),
+				randomDouble(min,max),
+				randomDouble(min,max)
 			};
 			return Result;
+		}
+
+		RTW_STATIC RTW_INLINE Math::color RandomColor(float64 min, float64 max)
+		{
+			return (Math::color)RandomVector(min, max);
 		}
 
 		RTW_STATIC RTW_INLINE Math::vec3 RandomUnitSphereVector()
@@ -72,8 +76,8 @@ namespace RTW
 			//Devil loop
 			while (true)
 			{
-				Math::vec3 vector = RandomVector(-1.f, 1.f);
-				if (Math::less(vector.SquareLength(), 1.f))
+				Math::vec3 vector = RandomVector(-1, 1);
+				if (Math::less(vector.SquareLength(), 1))
 				{
 					return vector;
 				}
@@ -85,8 +89,8 @@ namespace RTW
 			//Devil loop
 			while (true)
 			{
-				Math::vec3 vector{ (float32)randomDouble(-1,1), (float32)randomDouble(-1,1), .0f};
-				if (Math::less(vector.SquareLength(), 1.f))
+				Math::vec3 vector{ (float32)randomDouble(-1,1), (float32)randomDouble(-1,1), .0};
+				if (Math::less(vector.SquareLength(), 1))
 				{
 					return vector;
 				}
@@ -101,11 +105,11 @@ namespace RTW
 		RTW_STATIC RTW_INLINE Math::vec3 RandomHemisphereUnitVector(const Math::vec3 normal)
 		{
 			Math::vec3 UnitSphereVec = RandomUnitSphereUnitVector();
-			if (Math::more(Math::DotProduct(UnitSphereVec, normal), 0.f))
+			if (Math::more(Math::DotProduct(UnitSphereVec, normal), 0))
 			{
 				return UnitSphereVec;
 			}
-			return UnitSphereVec * -1.f;
+			return UnitSphereVec * -1;
 		};
 	}
 
