@@ -369,3 +369,4 @@ FodyWeavers.xsd
 /assets/exampleImage.png
 /assets/PinkFilter.png
 *.licenseheader
+/assets
