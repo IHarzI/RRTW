@@ -8,6 +8,8 @@
 #include "RTW_CORE.h"
 #include "RTW_MATH.h"
 #include "RTW_Memory.h"
+#include "RTW_Image.h"
+#include "Perlin.h"
 
 namespace RTW
 {
@@ -52,6 +54,29 @@ namespace RTW
 			float64 invScale;
 			SharedMemoryHandle<RTW_Texture> even;
 			SharedMemoryHandle<RTW_Texture> odd;
+		};
+
+		class ImageTexture : public RTW_Texture
+		{
+		public:
+			ImageTexture(const char* filename) : image(filename) {};
+
+			Math::color value(float64 U, float64 V, const Math::vec3& p) const override;
+
+		private:
+			RTW_Image image;
+		};
+
+		class NoiseTexture : public RTW_Texture
+		{
+		public:
+			NoiseTexture(float64 scale = 1.0): scale(scale) {};
+
+			Math::color value(float64 U, float64 V, const Math::vec3& p) const override;
+
+		private:
+			Perlin noise;
+			float64 scale;
 		};
 	}
 

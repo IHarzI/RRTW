@@ -5,7 +5,6 @@
 //WIP.
 #include "RTW_Texture.h"
 
-
 namespace RTW
 {
 
@@ -19,6 +18,27 @@ namespace RTW
 			bool isEven = (xInt + yInt + zInt) % 2 == 0;
 
 			return isEven ? even->value(U,V,p) : odd->value(U,V,p);
+		}
+
+		Math::color ImageTexture::value(float64 U, float64 V, const Math::vec3& p) const
+		{
+			if (image.height() <= 0)
+				return { 0, 1, 1 };
+
+			U = Math::clamp(U, 0.0, 1.0);
+			V = 1.0 - Math::clamp(V, 0.0, 1.0);
+
+			auto i = int32(U * image.width());
+			auto j = int32(V * image.height());
+			auto pixel = image.pixelData(i, j);
+
+			auto colorScale = 1.0 / 255.0;
+			return Math::color(colorScale * pixel[0], colorScale * pixel[1], colorScale * pixel[2]);
+		}
+
+		Math::color NoiseTexture::value(float64 U, float64 V, const Math::vec3& p) const
+		{
+			return Math::color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
 		}
 	}
 

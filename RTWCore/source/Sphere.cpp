@@ -37,7 +37,9 @@ namespace RTW
 			{
 				rec.t = temp;
 				rec.p = r.pointAtScalar(rec.t);
-				rec.setFaceNormal(r, (rec.p - center) / radius);
+				Math::vec3 outwardNormal = (rec.p - center) / radius;
+				rec.setFaceNormal(r, outwardNormal);
+				getSphereUV(outwardNormal, rec.U, rec.V);
 				rec.mat = material;
 				return true;
 			}

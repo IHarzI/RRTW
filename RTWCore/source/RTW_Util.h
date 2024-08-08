@@ -9,6 +9,7 @@
 #include "RTW_MATH.h"
 #include <random>
 #include <fstream>
+#include <thread>
 
 namespace RTW
 {
@@ -43,8 +44,8 @@ namespace RTW
 
 		// Returns float64 in range .0f to 1.f
 		RTW_STATIC RTW_INLINE float64 randomDoubleGenerate() {
-			RTW_STATIC std::uniform_real_distribution<float64> distribution(0.f, 1.f);
-			RTW_STATIC std::mt19937 generator;
+			thread_local RTW_STATIC std::uniform_real_distribution<float64> distribution(0.f, 1.f);
+			thread_local RTW_STATIC std::mt19937 generator(std::hash<std::thread::id>()(std::this_thread::get_id()));
 			return distribution(generator);
 		}
 

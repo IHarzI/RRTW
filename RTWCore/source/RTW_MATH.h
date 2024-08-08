@@ -181,157 +181,157 @@ namespace harz {
 		// int8 mat4
 		using mat4x4c = template_matrix4x4<char>;
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE number_t pi()
 		{
 			return number_t(3.1415926535897932384626433);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t two_pi()
 		{
 			return number_t(6.28318530717958647692528676655900576);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t root_pi()
 		{
 			return number_t(1.772453850905516027);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t half_pi()
 		{
 			return number_t(1.57079632679489661923132169163975144);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t three_over_two_pi()
 		{
 			return number_t(4.71238898038468985769396507491925432);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t quarter_pi()
 		{
 			return number_t(0.785398163397448309615660845819875721);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t one_over_pi()
 		{
 			return number_t(0.318309886183790671537767526745028724);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t one_over_two_pi()
 		{
 			return number_t(0.159154943091895335768883763372514362);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t two_over_pi()
 		{
 			return number_t(0.636619772367581343075535053490057448);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t four_over_pi()
 		{
 			return number_t(1.273239544735162686151070106980114898);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t two_over_root_pi()
 		{
 			return number_t(1.12837916709551257389615890312154517);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t one_over_root_two()
 		{
 			return number_t(0.707106781186547524400844362104849039);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t root_half_pi()
 		{
 			return number_t(1.253314137315500251);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t root_two_pi()
 		{
 			return number_t(2.506628274631000502);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t root_ln_four()
 		{
 			return number_t(1.17741002251547469);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t e()
 		{
 			return number_t(2.71828182845904523536);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t euler()
 		{
 			return number_t(0.577215664901532860606);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t root_two()
 		{
 			return number_t(1.41421356237309504880168872420969808);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t root_three()
 		{
 			return number_t(1.73205080756887729352744634150587236);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t root_five()
 		{
 			return number_t(2.23606797749978969640917366873127623);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t ln_two()
 		{
 			return number_t(0.693147180559945309417232121458176568);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t ln_ten()
 		{
 			return number_t(2.30258509299404568401799145468436421);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t ln_ln_two()
 		{
 			return number_t(-0.3665129205816643);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t third()
 		{
 			return number_t(0.3333333333333333333333333333333333333333);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t two_thirds()
 		{
 			return number_t(0.666666666666666666666666666666666666667);
 		}
 
-		template<typename number_t = float>
+		template<typename number_t = MATHARZ_DEFAULT_FP>
 		MATHARZ_INLINE  number_t golden_ratio()
 		{
 			return number_t(1.61803398874989484820458683436563811);
@@ -620,6 +620,24 @@ namespace harz {
 		MATHARZ_INLINE double tan(double x)
 		{
 			return std::tan(x);
+		}
+
+		// Atan2
+		template<typename number_t = float>
+		MATHARZ_INLINE number_t atan2(number_t y, number_t x)
+		{
+			return std::atan2(y,x);
+		}
+
+		MATHARZ_INLINE float atan2(float y, float x)
+		{
+			return std::atan2f(y, x);
+		}
+
+
+		MATHARZ_INLINE double atan2(double y, double x)
+		{
+			return std::atan2(y, x);
 		}
 
 		// Clamp value from x, y

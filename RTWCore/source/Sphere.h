@@ -38,6 +38,15 @@ namespace RTW
 			return center + time * centerMoved;
 		};
 
+		RTW_INLINE void getSphereUV(const Math::vec3& p, float64& u, float64& v) const
+		{
+			float64 theta = Math::acos(-p.y);
+			float64 phi = Math::atan2(-p.z, p.x) + Math::pi();
+
+			u = phi / (Math::two_pi());
+			v = theta / Math::pi();
+		};
+
 		Math::vec3 center;
 		float32 radius;
 		SharedMemoryHandle<Material> material;

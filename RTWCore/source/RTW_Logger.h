@@ -55,12 +55,12 @@ namespace RTW
 
 
 // logs fatal message
-#define RTW_FATAL(msg,...) {RTW::Logger::logOutput(RTW::rtw_log_levels::LOG_LEVEL_FATAL,msg,##__VA_ARGS__); PH_DEBUG_BREAK();};
+#define RTW_FATAL(msg,...) {RTW::Logger::logOutput(RTW::rtw_log_levels::LOG_LEVEL_FATAL,msg,##__VA_ARGS__); RTW_DEBUG_BREAK();};
 
 // ERROR msg
 #ifndef RTW_ERROR
 // logs ERROR message
-#define RTW_ERROR(msg,...) {RTW::Logger::logOutput(RTW::rtw_log_levels::LOG_LEVEL_ERROR,msg,##__VA_ARGS__); PH_DEBUG_BREAK();};
+#define RTW_ERROR(msg,...) {RTW::Logger::logOutput(RTW::rtw_log_levels::LOG_LEVEL_ERROR,msg,##__VA_ARGS__); RTW_DEBUG_BREAK();};
 #endif // !PH_ERROR
 
 // WARN msg

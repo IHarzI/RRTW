@@ -6,7 +6,9 @@ workspace "RTW"
 		"Release"
 	}
 	outputdir = "%{cfg.buildcfg}"
-
+	
+	IncludeDir = {}
+	IncludeDir["stb_image"] = "RTWCore/vendors/stb"
 
 project "RTWCore"
 	kind "WindowedApp" 
@@ -19,12 +21,14 @@ project "RTWCore"
 	files 
 	{
 		"%{prj.name}/source/**.h",
-		"%{prj.name}/source/**.cpp"
+		"%{prj.name}/source/**.cpp",
+		"%{IncludeDir.stb_image}/**"
 	}
 
 	includedirs
 	{
-		"%{prj.name}/source"
+		"%{prj.name}/source",
+		"%{prj.name}/vendors"
 	}
 
 	filter {"system:windows"}
