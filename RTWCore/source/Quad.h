@@ -67,12 +67,12 @@ namespace RTW
 		auto back =MakeUniqueHandle<Quad>(Math::vec3{ max.x,min.y,min.z }, -1 * dx, dy, mat);
 		auto front =MakeUniqueHandle<Quad>(Math::vec3{ min.x,min.y,max.z }, dx, dz, mat);
 
-		sides->addObject(top.RetrieveResourse());
-		sides->addObject(bottom.RetrieveResourse());					
-		sides->addObject(left.RetrieveResourse());
+		sides->addObject(front.RetrieveResourse());
 		sides->addObject(right.RetrieveResourse());
 		sides->addObject(back.RetrieveResourse());
-		sides->addObject(front.RetrieveResourse());
+		sides->addObject(left.RetrieveResourse());
+		sides->addObject(top.RetrieveResourse());
+		sides->addObject(bottom.RetrieveResourse());					
 
 		return sides;
 	}

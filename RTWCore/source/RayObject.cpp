@@ -49,8 +49,8 @@ namespace RTW
         p[2] = -sinTheta* rec.p[0] + cosTheta * rec.p[2];
 
         auto normal = rec.normal;
-        normal[0] = cosTheta * rec.normal[0] - sinTheta * rec.normal[2];
-        normal[2] = sinTheta * rec.normal[0] + cosTheta * rec.normal[2];
+        normal[0] = cosTheta * rec.normal[0] + sinTheta * rec.normal[2];
+        normal[2] = -sinTheta * rec.normal[0] + cosTheta * rec.normal[2];
 
         rec.p = p;
         rec.normal = normal;
