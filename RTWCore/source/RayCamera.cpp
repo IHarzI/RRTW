@@ -19,7 +19,7 @@
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 13;
+const uint32 maxThreads = 18;
 
 namespace RTW
 {
@@ -211,7 +211,7 @@ namespace RTW
 			{
 				if (useBackgroundBlend)
 				{
-					RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direciton());
+					RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direction());
 					float64 t = 0.5f * (unitDirection.y + .5f);
 					return (Math::color)RTW::Math::Lerp({ 1,1,1 }, (Math::vec3)backgroundColor, t);
 

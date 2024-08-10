@@ -46,6 +46,16 @@ namespace RTW
 		RTW_STATIC RTW_INLINE const Interval interval_empty{ RTW::Math::infinity<float64>(), -RTW::Math::infinity<float64>() };
 		RTW_STATIC RTW_INLINE const Interval interval_universe{ -RTW::Math::infinity<float64>(), RTW::Math::infinity<float64>() };
 
+		RTW_INLINE Interval operator+(const Interval& interval, float64 offset)
+		{
+			return Interval{ interval.min + offset, interval.max + offset };
+		};
+
+		RTW_INLINE Interval operator+(float64 offset, const Interval& interval)
+		{
+			return interval + offset;
+		}
+
 		struct AABB {
 			union
 			{
@@ -66,6 +76,7 @@ namespace RTW
 				x = (a[0] <= b[0]) ? Interval(a[0], b[0]) : Interval(b[0], a[0]);
 				y = (a[1] <= b[1]) ? Interval(a[1], b[1]) : Interval(b[1], a[1]);
 				z = (a[2] <= b[2]) ? Interval(a[2], b[2]) : Interval(b[2], a[2]);
+				padMinimums();
 			}
 
 			AABB(const AABB& bBox1, const AABB& bBox2)
@@ -94,7 +105,7 @@ namespace RTW
 			bool overlap(const Ray& r, Interval rayT) const
 			{
 				const Math::vec3 rayOrigin = r.origin();
-				const Math::vec3 rayDirection = r.direciton();
+				const Math::vec3 rayDirection = r.direction();
 
 				for (uint32 axisIndex = 0; axisIndex < 3; axisIndex++)
 				{
@@ -131,6 +142,17 @@ namespace RTW
 				if (z.size() < delta) z = z.expand(delta);
 			}
 		};
+
+		RTW_INLINE AABB operator+(const AABB& bBox, const Math::vec3& offset)
+		{
+			return AABB{bBox.x + offset.x, bBox.y + offset.y, bBox.z + offset.z};
+		}
+
+		RTW_INLINE AABB operator+(const Math::vec3& offset, const AABB& bBox)
+		{
+			return bBox + offset;
+		}
+
 		RTW_STATIC RTW_INLINE const AABB AABB_empty{ interval_empty,interval_empty,interval_empty };
 		RTW_STATIC RTW_INLINE const AABB AABB_universe{ interval_universe,interval_universe,interval_universe };
 	};

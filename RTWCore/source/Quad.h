@@ -28,7 +28,7 @@ namespace RTW
 		virtual void setBoundingBox()
 		{
 			auto bBoxDiagonal1 = D3Math::AABB{ Q,Q + u + v };
-			auto bBoxDiagonal2 = D3Math::AABB{ Q + u, Q + v };
+			auto bBoxDiagonal2 = D3Math::AABB{ Q + u, Q + v};
 			bBox = D3Math::AABB{ bBoxDiagonal1,bBoxDiagonal2 };
 		}
 

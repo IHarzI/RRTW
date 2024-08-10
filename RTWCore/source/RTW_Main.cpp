@@ -173,7 +173,7 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             auto blueMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ .0,.0,1.0 });
             auto whiteMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ 0.98,.98,.98 });
             auto LightMat = MakeSharedHandle<Materials::DiffuseLight>(Math::color{ 4,3.7,3.9 } * 2.1);
-            auto whiteMetal = MakeSharedHandle<Materials::Metal>(Math::color{ 0.98,.98,.98 },0.32);
+            auto whiteMetal = MakeSharedHandle<Materials::Metal>(Math::color{ 0.98,.98,.98 },1);
 
             auto Glass = MakeSharedHandle<RTW::Materials::Dielectric>(1.31);
 
@@ -183,14 +183,19 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 4, -4,  8 }, Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, blueMat.Get()).RetrieveResourse());
             world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, 4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
             world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
-            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 0, 0 },1.f, Glass.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 2, 0 },1.f, Glass.Get()).RetrieveResourse());
+            //world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 2, 2, 0 }, 1.f, whiteMetal.Get()).RetrieveResourse());
             Math::vec3 a = { 1,-4,6 };
             Math::vec3 b = { -1,-2,4 };
-            auto box1 = ConstructBox(a, b, whiteMat.Get());
+            UniqueMemoryHandle<RayObject> box1 = ConstructBox(a, b, whiteMat.Get()).RetrieveResourse();
+            box1 = MakeUniqueHandle<RotateYOperation>(box1.RetrieveResourse(), 27.0).RetrieveResourse();
+            box1 = MakeUniqueHandle<TranslatedObject>(box1.RetrieveResourse(), Math::vec3{ -1,0,0 }).RetrieveResourse();
             world.EmplaceBack(box1.RetrieveResourse());
-            a = { 2,-4,1 };
-            b = { 4, 0, 3 };
-            auto box2 = ConstructBox(a, b, whiteMetal.Get());
+            a = { 0,-4,-1 };
+            b = { 4, 1, 3 };
+            UniqueMemoryHandle<RayObject> box2 = ConstructBox(a, b, whiteMetal.Get()).RetrieveResourse();
+            box2 = MakeUniqueHandle<RotateYOperation>(box2.RetrieveResourse(), -13.0).RetrieveResourse();
+            box2 = MakeUniqueHandle<TranslatedObject>(box2.RetrieveResourse(), Math::vec3{ -3,0,0 }).RetrieveResourse();
             world.EmplaceBack(box2.RetrieveResourse());
         }
     break;
@@ -261,8 +266,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     RTW::RayCamera Camera(1000, 16.0/9.0);
     RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
     RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
-    Camera.setPerPixelSamples(1500);
-    Camera.setDepth(150);
+    Camera.setPerPixelSamples(200);
+    Camera.setDepth(200);
     Camera.setVFov(80);
     Camera.SetViewPerspective({ 0,0,13 }, { 0,0,0 }, { 0,1,0 });
     Camera.SetFocus(0.7, 12);

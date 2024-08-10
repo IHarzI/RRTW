@@ -26,17 +26,17 @@ namespace RTW {
 
 		bool Metal::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
 		{
-			Math::vec3 Reflected = rayIn->direciton().Reflect(rec->normal);
+			Math::vec3 Reflected = rayIn->direction().Reflect(rec->normal);
 			Reflected = Reflected.GetNormalized() + (Util::RandomUnitSphereUnitVector() * Fuzz);
 			*scattered = Ray(rec->p, Reflected, rayIn->tm);
 			attenuation = albedo;
-			return Math::more(scattered->direciton().DotProduct(rec->normal), 0);
+			return Math::more(scattered->direction().DotProduct(rec->normal), 0);
 		}
 		bool Dielectric::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
 		{
 			attenuation = { 1.f};
 			float64 ri = rec->frontFace ? (1.0 / refractionIndex) : refractionIndex;
-			Math::vec3 normalizedDirection = rayIn->direciton().Normalize();
+			Math::vec3 normalizedDirection = rayIn->direction().Normalize();
 
 			double cosTheta = Math::min((double)(normalizedDirection * -1.f).DotProduct(rec->normal), 1.0);
 			double sinTheta = Math::sqrt(1.0 - cosTheta * cosTheta);

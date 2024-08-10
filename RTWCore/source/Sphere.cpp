@@ -11,8 +11,8 @@ namespace RTW
 	{
 		Math::vec3 realCenter = isMoving ? CalculateCenterFromTime(r.tm) : center;
 		Math::vec3 oc = r.origin() - realCenter;
-		float32 a = Math::DotProduct(r.direciton(), r.direciton());
-		float32 b = Math::DotProduct(oc, r.direciton());
+		float32 a = Math::DotProduct(r.direction(), r.direction());
+		float32 b = Math::DotProduct(oc, r.direction());
 		float32 c = Math::DotProduct(oc, oc) - radius * radius;
 		float32 discrimant = b * b - a * c;
 		if (Math::more(discrimant,0.f))
