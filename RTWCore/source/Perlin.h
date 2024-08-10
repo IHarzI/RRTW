@@ -24,7 +24,7 @@ namespace RTW
 			perlinGeneratePerm(permZ);
 		}
 
-		float64 noise(const Math::vec3& p) const
+		RTW_INLINE float64 noise(const Math::vec3& p) const
 		{
 
 			auto u = p.x - Math::floor(p.x);
@@ -53,6 +53,22 @@ namespace RTW
 			}
 			return PerlinInterp(c, u, v, w);
 		}
+
+		RTW_INLINE float64 turb(const Math::vec3& p, int32 depth) const
+		{
+			auto accum = 0.0;
+			auto temp_p = p;
+			auto weight = 1.0;
+
+			for (int32 i = 0; i < depth; i++)
+			{
+				accum += weight * noise(temp_p);
+				weight *= 0.5;
+				temp_p = temp_p * 2;
+			}
+			return Math::abs(accum);
+		}
+
 	private:
 
 		RTW_STATIC RTW_INLINE void perlinGeneratePerm(int32* p)

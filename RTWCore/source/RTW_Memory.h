@@ -465,14 +465,14 @@ private:
 		InitCheckedRefMap();
 
 
-		if (uint64* RefCount = RTW_MEMORY_REFMAP_INTRLK_GRD_GETREF_U64(DataToHandle))
+		if (uint64* RefCount = RTW_MEMORY_REFMAP_INTRLK_GRD_GETREF_U64((void*)DataToHandle))
 		{
 			RTW_MEMORY_REF_INTRLK_GRD_INCR_U64(*RefCount);
 		}
 		else
 		{
 			REFERENCE_INTERLOCK_GUARD
-			RTW_MEMORY_REFMAP->insert({ DataToHandle, 1 });
+			RTW_MEMORY_REFMAP->insert({ (void*)DataToHandle, 1 });
 		}
 
 		Data = DataToHandle;

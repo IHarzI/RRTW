@@ -19,7 +19,7 @@
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 5;
+const uint32 maxThreads = 13;
 
 namespace RTW
 {
@@ -192,25 +192,32 @@ namespace RTW
 		else
 		{
 			RTW::HitRecord hitRecord{};
-			if (world.hit(r, 0.001f, Math::MaxFloat64(), hitRecord))
+			if (world.hit(r, 0.0001, Math::MaxFloat64(), hitRecord))
 			{
 
 				Ray Scattered{};
 				Math::color Attenuation{};
-				if (hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
+				Math::color emissionColor = hitRecord.mat->emit(hitRecord.U, hitRecord.V, hitRecord.p);
+
+				if (!hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
 				{
-					return Attenuation * RayColorTrace(Scattered, world, Depth - 1);
-				}
-				else
-				{
-					return Math::color{ 0 };
+					return emissionColor;
 				};
+				Math::color scatterColor = Attenuation * RayColorTrace(Scattered, world, Depth - 1);
+				
+				return scatterColor + emissionColor;
 			}
 			else
 			{
-				RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direciton());
-				float64 t = 0.5f * (unitDirection.y + .5f);
-				return (Math::color)RTW::Math::Lerp({ 1,1,1 }, { .2,.4,1 }, t);
+				if (useBackgroundBlend)
+				{
+					RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direciton());
+					float64 t = 0.5f * (unitDirection.y + .5f);
+					return (Math::color)RTW::Math::Lerp({ 1,1,1 }, (Math::vec3)backgroundColor, t);
+
+				}
+				else
+					return backgroundColor;
 			};
 		};
 		return { 0.f };

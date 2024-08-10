@@ -38,7 +38,11 @@ namespace RTW
 
 		Math::color NoiseTexture::value(float64 U, float64 V, const Math::vec3& p) const
 		{
-			return Math::color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
+			//auto NoiseColor = Math::color(1.0,1.0,1.0) * 0.5 * (1.0 + noise.noise(scale * p));
+			//const int32 Multiplayer = 50;
+			//return Math::color{ Math::sin(NoiseColor.x* Multiplayer), Math::sin(NoiseColor.y* Multiplayer), Math::sin(NoiseColor.z* Multiplayer) };
+			auto NoiseColor = Math::color(0.5, 0.5, 0.5) * ((1 + Math::sin(scale * p.z + 10 *  noise.turb(p, 15))));
+			return NoiseColor;
 		}
 	}
 

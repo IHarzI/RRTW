@@ -11,6 +11,7 @@
 #include "RayList.h"
 #include "Sphere.h"
 #include "RTW_Logger.h"
+#include "Quad.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -26,8 +27,13 @@ enum SceneID : uint32
 {
     SpheresParadise,
     Mars,
-    PerlinNoise
+    PerlinNoise,
+    QuadsRoom,
+    SimpleLightBox, 
+    CornelBox
 };
+
+using namespace RTW;
 
 void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
 {
@@ -106,13 +112,86 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             auto marsSurface = MakeSharedHandle<RTW::Materials::Lambertian>(marsTexture.Get());
             world.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3{ 0,0,0 }, 2, marsSurface.Get()).RetrieveResourse());
         }
-        break;
+    break;
     case PerlinNoise:
         {
             auto perlinNose = MakeSharedHandle<RTW::Textures::NoiseTexture>(10);
             auto noiseMaterial = MakeSharedHandle<RTW::Materials::Lambertian>(perlinNose.Get());
             world.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3{ 0,-1000,0 }, 1000, noiseMaterial.Get()).RetrieveResourse());
             world.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3{ 0,2,0 }, 2, noiseMaterial.Get()).RetrieveResourse());
+        }
+    break;
+    case QuadsRoom:
+        {
+            auto redMat = MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::color{ 1.0,.0,.0 });
+            auto greenMat = MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::color{ .0,1.0,.0 });
+            auto blueMat = MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::color{ .0,.0,1.0 });
+            auto whiteMat = MakeSharedHandle<RTW::Materials::Lambertian>(RTW::Math::color{ 0.98,.98,.98 });
+            auto NoiseText = MakeSharedHandle<RTW::Textures::NoiseTexture>(15);
+            auto NoiseText2 = MakeSharedHandle<RTW::Textures::NoiseTexture>(6);
+            auto SolidText = MakeSharedHandle<RTW::Textures::SolidColor>(Math::color{ 0.2,0.3,0.77 });
+            auto Checkerboard = MakeSharedHandle<RTW::Textures::CheckerTexture>(.8, NoiseText.Get(), NoiseText2.Get());
+            auto CheckerBoardNoiseMat = MakeSharedHandle<RTW::Materials::Lambertian>(Checkerboard.Get());
+            auto DiamondGlass = MakeSharedHandle<RTW::Materials::Dielectric>(2.417);
+            auto Ethanol = MakeSharedHandle<RTW::Materials::Dielectric>(1.36);
+            auto Ice = MakeSharedHandle<RTW::Materials::Dielectric>(1.31);
+
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{-4, -4, 8},     Math::vec3{0,0,-16}, Math::vec3{0,8,0}, redMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{-4, -4, 0},    Math::vec3{ 8,0,0 }, Math::vec3{ 0,8,0 }, greenMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{4, -4,  8},     Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, blueMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{-4, 4, 8}   , Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
+            //world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, 
+            //    CheckerBoardNoiseMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, -1000, 0 },994, CheckerBoardNoiseMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 0, 0 }, 2.5, DiamondGlass.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0.3, -0.1, 0 }, 0.7, Ethanol.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ -0.2, 0.3, -0.1 }, 0.3, Ice.Get()).RetrieveResourse());
+        }
+    break;
+    case SimpleLightBox:
+        {
+            auto redMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ 1.0,.0,.0 });
+            auto greenMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ .0,1.0,.0 });
+            auto blueMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ .0,.0,1.0 });
+            auto whiteMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ 0.98,.98,.98 });
+            auto LightMat = MakeSharedHandle<Materials::DiffuseLight>(Math::color{ 10,2,10 });
+
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, redMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -1, 2, 1 }, Math::vec3{ 2,0,0 }, Math::vec3{ 0,2,0 }, LightMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 0 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,8,0 }, greenMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 4, -4,  8 }, Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, blueMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, 4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
+            auto DiamondGlass = MakeSharedHandle<Materials::Dielectric>(2.417);
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 0, 0 }, 2.5, DiamondGlass.Get()).RetrieveResourse());
+        }
+    break;
+    case CornelBox:
+        {
+            auto redMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ 1.0,.0,.0 });
+            auto greenMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ .0,1.0,.0 });
+            auto blueMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ .0,.0,1.0 });
+            auto whiteMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ 0.98,.98,.98 });
+            auto LightMat = MakeSharedHandle<Materials::DiffuseLight>(Math::color{ 4,3.7,3.9 } * 2.1);
+            auto whiteMetal = MakeSharedHandle<Materials::Metal>(Math::color{ 0.98,.98,.98 },0.32);
+
+            auto Glass = MakeSharedHandle<RTW::Materials::Dielectric>(1.31);
+
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, redMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 1, 3.8, 3 }, Math::vec3{ -2,0,0 }, Math::vec3{ 0,0,2 }, LightMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 0 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,8,0 }, greenMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 4, -4,  8 }, Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, blueMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, 4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 0, 0 },1.f, Glass.Get()).RetrieveResourse());
+            Math::vec3 a = { 1,-4,6 };
+            Math::vec3 b = { -1,-2,4 };
+            auto box1 = ConstructBox(a, b, whiteMat.Get());
+            world.EmplaceBack(box1.RetrieveResourse());
+            a = { 2,-4,1 };
+            b = { 4, 0, 3 };
+            auto box2 = ConstructBox(a, b, whiteMetal.Get());
+            world.EmplaceBack(box2.RetrieveResourse());
         }
     break;
     default:
@@ -173,21 +252,23 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     // -----------------
     RTW::RayList::ObjectList ObjectList{ 50 };
     
-    PopulateScene(ObjectList, PerlinNoise);
+    PopulateScene(ObjectList, CornelBox);
 
     auto BVH = MakeSharedHandle<RTW::BVH_Node>(ObjectList, 0, ObjectList.size());
-    RTW::RayList World{ BVH.Get()};
-
+    //RTW::RayList World{ BVH.Get()};
+    RTW::RayList World{ std::move(ObjectList)};
     // Camera init
-    RTW::RayCamera Camera(1000, 16.f/9.f);
+    RTW::RayCamera Camera(1000, 16.0/9.0);
     RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
     RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
-    Camera.setPerPixelSamples(500);
-    Camera.setDepth(50);
-    Camera.setVFov(30);
-    Camera.SetViewPerspective({ 13,2,3 }, { 0.2,0.7,0.3 }, { 0,1,0 });
-    Camera.SetFocus(0.6, 10);
+    Camera.setPerPixelSamples(1500);
+    Camera.setDepth(150);
+    Camera.setVFov(80);
+    Camera.SetViewPerspective({ 0,0,13 }, { 0,0,0 }, { 0,1,0 });
+    Camera.SetFocus(0.7, 12);
     Camera.initialize();
+    Camera.backgroundColor = {.002,.002,.01};
+    Camera.useBackgroundBlend = false;
 
     // -----------------
 

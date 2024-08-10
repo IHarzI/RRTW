@@ -24,6 +24,11 @@ namespace RTW
 		{
 			return false;
 		}
+
+		virtual Math::color emit(float64 u, float64 v, const Math::vec3& p) const
+		{
+			return Math::color{ 0,0,0 };
+		}
 	};
 
 	namespace Materials
@@ -58,6 +63,17 @@ namespace RTW
 			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const override;
 		private:
 			float64 refractionIndex;
+		};
+
+		class DiffuseLight : public Material
+		{
+		public:
+			DiffuseLight(const Math::color& emit) : tex(rtw_new<Textures::SolidColor>(emit)) {};
+			DiffuseLight(SharedMemoryHandle<RTW_Texture> tex) : tex(tex) {};
+
+			Math::color emit(float64 u, float64 v, const Math::vec3& p) const override;
+		private:
+			SharedMemoryHandle<RTW_Texture> tex;
 		};
 	};
 }

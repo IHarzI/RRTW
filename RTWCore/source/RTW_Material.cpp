@@ -56,5 +56,10 @@ namespace RTW {
 			*scattered = Ray(rec->p, Direction, rayIn->tm);
 			return true;
 		}
+
+		Math::color DiffuseLight::emit(float64 u, float64 v, const Math::vec3& p) const
+		{
+			return tex->value(u, v, p);
+		}
 	}
 }

@@ -1466,22 +1466,22 @@ namespace harz {
 		template<typename number_t, typename other_number_t>
 		MATHARZ_INLINE template_vec3<number_t> operator*(other_number_t a, const template_vec3<number_t>& vec)
 		{
-			return vec.ScalarMultiply(a);
+			return vec.ScalarMultiply(static_cast<number_t>(a));
 		}
 		template<typename number_t, typename other_number_t>
 		MATHARZ_INLINE template_vec3<number_t> operator/(other_number_t a, const template_vec3<number_t>& vec)
 		{
-			return vec.ScalarDivide(a);
+			return vec.ScalarDivide(static_cast<number_t>(a));
 		}
 		template<typename number_t, typename other_number_t>
 		MATHARZ_INLINE template_vec3<number_t> operator+(other_number_t a, const template_vec3<number_t>& vec)
 		{
-			return vec.ScalarAdd(a);
+			return vec.ScalarAdd(static_cast<number_t>(a));
 		}
 		template<typename number_t, typename other_number_t>
 		MATHARZ_INLINE template_vec3<number_t> operator-(other_number_t a, const template_vec3<number_t>& vec)
 		{
-			return vec.ScalarSubtract(a);
+			return vec.ScalarSubtract(static_cast<number_t>(a));
 		}
 
 		// Vector with 4 components

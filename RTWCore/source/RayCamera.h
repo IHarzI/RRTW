@@ -54,6 +54,8 @@ namespace RTW
 
 		int32 GetImageHeight() const { return imageHeight; };
 		int32 GetImageWidth() const { return imageWidth; };
+		Math::color backgroundColor;
+		bool useBackgroundBlend = false;
 	private:
 
 		void RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff = nullptr);
