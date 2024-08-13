@@ -7,17 +7,17 @@
 
 namespace RTW
 {
-	bool Sphere::hit(const Ray& r, float32 tMin, float32 tMax, HitRecord& rec) const
+	bool Sphere::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
 	{
 		Math::vec3 realCenter = isMoving ? CalculateCenterFromTime(r.tm) : center;
 		Math::vec3 oc = r.origin() - realCenter;
-		float32 a = Math::DotProduct(r.direction(), r.direction());
-		float32 b = Math::DotProduct(oc, r.direction());
-		float32 c = Math::DotProduct(oc, oc) - radius * radius;
-		float32 discrimant = b * b - a * c;
-		if (Math::more(discrimant,0.f))
+		float64 a = Math::DotProduct(r.direction(), r.direction());
+		float64 b = Math::DotProduct(oc, r.direction());
+		float64 c = Math::DotProduct(oc, oc) - radius * radius;
+		float64 discrimant = b * b - a * c;
+		if (Math::more(discrimant,0.0))
 		{
-			float temp = (-b - Math::sqrt(b * b - a * c)) / a;
+			float64 temp = (-b - Math::sqrt(b * b - a * c)) / a;
 			bool hit = false;
 			if (temp < tMax && temp > tMin)
 			{

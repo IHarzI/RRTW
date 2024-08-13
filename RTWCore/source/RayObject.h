@@ -16,7 +16,7 @@ namespace RTW
 		float64 t;
 		float64 U;
 		float64 V;
-		WeakMemoryHandle<Material> mat;
+		WeakMemoryHandle<RTW_Material> mat;
 		Math::vec3 p;
 		Math::vec3 normal;
 		uint8 frontFace : 1;
@@ -27,7 +27,7 @@ namespace RTW
 	class RayObject
 	{
 	public:
-		virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const = 0;
+		virtual bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const = 0;
 
 
 		virtual D3Math::AABB boundingBox() const = 0;
@@ -43,7 +43,7 @@ namespace RTW
 			bBox = object->boundingBox() + offset;
 		}
 
-		bool hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const override;
+		bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const override;
 
 		D3Math::AABB boundingBox() const override {
 			return bBox;
@@ -98,7 +98,7 @@ namespace RTW
 			bBox = D3Math::AABB{ min, max };
 		}
 
-		bool hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const override;
+		bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const override;
 
 		D3Math::AABB boundingBox() const override {
 			return bBox;

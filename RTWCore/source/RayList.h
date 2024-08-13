@@ -21,7 +21,7 @@ namespace RTW
 		RayList(ObjectList list) : rayObjectsList(list){};
 		RayList(ObjectHandle object) { addObject(object); };
 
-		virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const;
+		virtual bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const;
 		void addObject(ObjectHandle object)
 		{
 			bBox = D3Math::AABB{ bBox, object->boundingBox() };

@@ -61,5 +61,11 @@ namespace RTW {
 		{
 			return tex->value(u, v, p);
 		}
+		bool Isotropic::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
+		{
+			*scattered = Ray(rec->p, Util::RandomUnitSphereUnitVector(), rayIn->tm);
+			attenuation = tex->value(rec->U, rec->V, rec->p);
+			return true;
+		}
 	}
 }

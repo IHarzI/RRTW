@@ -531,6 +531,27 @@ namespace harz {
 			return std::fmod(x, y);
 		}
 
+		// Log
+		template<typename number_t>
+		MATHARZ_INLINE number_t log(number_t x)
+		{
+			return std::log(x);
+		}
+		MATHARZ_INLINE float log(float x)
+		{
+			return std::log(x);
+		}
+
+		MATHARZ_INLINE double log(double x)
+		{
+			return std::log(x);
+		}
+
+		MATHARZ_INLINE long double log(long double x)
+		{
+			return std::log(x);
+		}
+
 		// Cos 
 		template<typename number_t = float>
 		MATHARZ_INLINE number_t cos(number_t x)
@@ -1297,6 +1318,19 @@ namespace harz {
 				return b.ProjectionFrom(*this);
 			}
 
+			// Get angle(in radians) between this vector and vector b
+			MATHARZ_INLINE double Angle(const template_vec3<number_t>& b)
+			{
+				double DotPrdct = GetNormalized().DotProduct(b.GetNormalized());
+
+				if (more_or_equal(DotPrdct, 1.0))
+					return 0.0;
+				else if (less_or_equal(DotPrdct, -1.0))
+					return pi<double>();
+				else
+					return math::acos(DotPrdct);
+			}
+
 			// RAY TRACING MATH
 			// -----------------------
 			// Calculate reflected ray direction from surface with some normal(n), reflectFactor - to negate vector in-surface part
@@ -1482,6 +1516,13 @@ namespace harz {
 		MATHARZ_INLINE template_vec3<number_t> operator-(other_number_t a, const template_vec3<number_t>& vec)
 		{
 			return vec.ScalarSubtract(static_cast<number_t>(a));
+		}
+
+		// Get angle(in radians) between two vectors
+		template<typename number_t>
+		MATHARZ_INLINE double Angle(const template_vec3<number_t>& a, const template_vec3<number_t>& b)
+		{
+			return a.Angle(b);
 		}
 
 		// Vector with 4 components

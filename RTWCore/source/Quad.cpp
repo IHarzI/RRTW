@@ -7,7 +7,7 @@
 
 namespace RTW
 {
-	bool Quad::hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const
+	bool Quad::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
 	{
 		auto denom = Math::DotProduct(normal, r.direction());
 		if (Math::less(Math::abs(denom), 0.0000001))

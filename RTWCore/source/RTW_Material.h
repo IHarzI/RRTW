@@ -15,10 +15,10 @@ namespace RTW
 	class Ray;
 	struct HitRecord;
 
-	class Material
+	class RTW_Material
 	{
 	public:
-		virtual ~Material() = default;
+		virtual ~RTW_Material() = default;
 
 		virtual bool scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
 		{
@@ -33,7 +33,7 @@ namespace RTW
 
 	namespace Materials
 	{
-		class Lambertian : public Material
+		class Lambertian : public RTW_Material
 		{
 		public:
 			Lambertian(const Math::color& albedo) : tex(rtw_new<Textures::SolidColor>(albedo)) {};
@@ -44,7 +44,7 @@ namespace RTW
 			SharedMemoryHandle<RTW_Texture> tex;
 		};
 
-		class Metal : public Material
+		class Metal : public RTW_Material
 		{
 		public:
 			Metal(const Math::color& albedo, float64 FuzzFactor) : albedo(albedo), Fuzz(FuzzFactor < 1 ? FuzzFactor : 1) {};
@@ -55,7 +55,7 @@ namespace RTW
 			float64 Fuzz;
 		};
 
-		class Dielectric : public Material
+		class Dielectric : public RTW_Material
 		{
 		public:
 			Dielectric(float64 refractionIndex) : refractionIndex(refractionIndex) {};
@@ -65,7 +65,7 @@ namespace RTW
 			float64 refractionIndex;
 		};
 
-		class DiffuseLight : public Material
+		class DiffuseLight : public RTW_Material
 		{
 		public:
 			DiffuseLight(const Math::color& emit) : tex(rtw_new<Textures::SolidColor>(emit)) {};
@@ -75,5 +75,17 @@ namespace RTW
 		private:
 			SharedMemoryHandle<RTW_Texture> tex;
 		};
+
+		class Isotropic : public RTW_Material
+		{
+		public:
+			Isotropic(const Math::color& albedo) : tex(rtw_new<Textures::SolidColor>(albedo)) {};
+			Isotropic(SharedMemoryHandle<RTW_Texture> tex) : tex(tex) {};
+
+			bool scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const override;
+		private:
+			SharedMemoryHandle<RTW_Texture> tex;
+		};
+
 	};
 }

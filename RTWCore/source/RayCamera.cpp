@@ -19,7 +19,7 @@
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 18;
+const uint32 maxThreads = 10;
 
 namespace RTW
 {

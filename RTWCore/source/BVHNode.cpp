@@ -46,7 +46,7 @@ namespace RTW
         }
     }
 
-    bool BVH_Node::hit(const Ray& r, float32 tMin, float32 tMax, HitRecord& rec) const
+    bool BVH_Node::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
     {
         if (!bBox.overlap(r, { tMin,tMax }))
         {

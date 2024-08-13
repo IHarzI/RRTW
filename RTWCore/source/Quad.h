@@ -14,7 +14,7 @@ namespace RTW
 	class Quad : public RayObject
 	{
 	public:
-		Quad(const Math::vec3& Q, const Math::vec3& u, const Math::vec3& v, SharedMemoryHandle<Material> mat)
+		Quad(const Math::vec3& Q, const Math::vec3& u, const Math::vec3& v, SharedMemoryHandle<RTW_Material> mat)
 			: Q(Q), u(u), v(v), material(mat)
 		{
 			auto n = Math::CrossProduct(u, v);
@@ -32,9 +32,9 @@ namespace RTW
 			bBox = D3Math::AABB{ bBoxDiagonal1,bBoxDiagonal2 };
 		}
 
-		virtual D3Math::AABB boundingBox() const { return bBox; }
+		virtual D3Math::AABB boundingBox() const override { return bBox; }
 
-		bool hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const override;
+		bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const override;
 
 		virtual bool isInterior(float64 a, float64 b, HitRecord& rec) const;
 
@@ -44,12 +44,12 @@ namespace RTW
 		Math::vec3 v;
 		Math::vec3 w;
 		D3Math::AABB bBox;
-		SharedMemoryHandle<Material> material;
+		SharedMemoryHandle<RTW_Material> material;
 		Math::vec3 normal;
 		float64 D;
 	};
 
-	RTW_INLINE UniqueMemoryHandle<RayList> ConstructBox(const Math::vec3& a, const Math::vec3& b, SharedMemoryHandle<Material> mat)
+	RTW_INLINE UniqueMemoryHandle<RayList> ConstructBox(const Math::vec3& a, const Math::vec3& b, SharedMemoryHandle<RTW_Material> mat)
 	{
 		auto sides = MakeUniqueHandle<RayList>();
 

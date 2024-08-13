@@ -14,7 +14,7 @@ namespace RTW
         normal = (bool)frontFace ? outwardNormal : -1.f * outwardNormal;
     }
 
-    bool TranslatedObject::hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const
+    bool TranslatedObject::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
     {
         Ray offsetRay(r.origin() - offset, r.direction(), r.tm);
         if (!object->hit(offsetRay, tMin, tMax, rec))
@@ -26,7 +26,7 @@ namespace RTW
 
         return true;
     }
-    bool RotateYOperation::hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const
+    bool RotateYOperation::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
     {
         auto origin = r.origin();
         auto direction = r.direction();

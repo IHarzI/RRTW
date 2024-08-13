@@ -7,7 +7,7 @@
 
 namespace RTW
 {
-	bool RayList::hit(const Ray& r, float tMin, float tMax, HitRecord& rec) const
+	bool RayList::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
 	{
 		bool hitAnything = false;
 		float64 closest = tMax;
