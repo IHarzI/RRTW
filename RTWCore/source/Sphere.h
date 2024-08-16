@@ -7,6 +7,7 @@
 
 #include <RayObject.h>
 #include "AABB.h"
+#include "RTW_Util.h"
 
 namespace RTW
 {
@@ -31,7 +32,28 @@ namespace RTW
 		virtual bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const;
 
 		virtual D3Math::AABB boundingBox() const override {return bBox;};
-		private:
+
+		RTW_INLINE float64 pdf_value(const Math::vec3& origin, const Math::vec3& direction) const override
+		{
+			HitRecord rec;
+			if (!this->hit(Ray(origin, direction), 0.001, Math::infinity<float64>(), rec))
+				return 0;
+
+			auto cosThetaMax = Math::sqrt(1 - radius * radius / (center - origin).SquareLength());
+			auto solidAngle = 2 * Math::pi<float64>() * (1 - cosThetaMax);
+
+			return 1 / solidAngle;
+		}
+
+		RTW_INLINE Math::vec3 random(const Math::vec3& origin) const override
+		{
+			Math::vec3 direction = center - origin;
+			auto distanceSqr = direction.SquareLength();
+			Util::ONB uvw{ direction };
+			return uvw.transform(randomToSphere(radius, distanceSqr));
+		}
+
+	private:
 
 		RTW_INLINE Math::vec3 CalculateCenterFromTime(float64 time) const
 		{
@@ -46,6 +68,19 @@ namespace RTW
 			u = phi / (Math::two_pi());
 			v = theta / Math::pi();
 		};
+
+		RTW_STATIC RTW_INLINE Math::vec3 randomToSphere(float64 radius, float64 disSqr)
+		{
+			auto r1 = Util::randomDouble();
+			auto r2 = Util::randomDouble();
+			auto z = 1 + r2 * (Math::sqrt(1 - radius * radius / disSqr) - 1);
+
+			auto phi = 2 * Math::pi<float64>() * r1;
+			auto x = Math::cos(phi) * Math::sqrt(1 - z * z);
+			auto y = Math::sin(phi) * Math::sqrt(1 - z * z);
+
+			return Math::vec3{ x,y,z };
+		}
 
 		Math::vec3 center;
 		float32 radius;

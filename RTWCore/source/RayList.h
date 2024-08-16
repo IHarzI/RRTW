@@ -18,7 +18,7 @@ namespace RTW
 		using ObjectList = Containers::DynamicArray<ObjectHandle>;
 
 		RayList() {};
-		RayList(ObjectList list) : rayObjectsList(list){};
+		RayList(ObjectList&& list) : rayObjectsList(std::move(list)){};
 		RayList(ObjectHandle object) { addObject(object); };
 
 		virtual bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const;
@@ -30,6 +30,15 @@ namespace RTW
 		const ObjectList& GetObjectList() { return rayObjectsList; };
 
 		D3Math::AABB boundingBox() const override { return bBox; }
+
+		RTW_INLINE Math::vec3 random(const Math::vec3& origin) const override
+		{
+			auto intSize = int32(rayObjectsList.size());
+			return rayObjectsList[Util::randomInt(0, intSize - 1)]->random(origin);
+		}
+
+		float64 pdf_value(const Math::vec3& origin, const Math::vec3& direction) const override;
+
 	private:
 		ObjectList rayObjectsList;
 		D3Math::AABB bBox;

@@ -29,7 +29,9 @@ namespace RTW
 			"%03d %03d %03d\n"
 		};
 
-		void writeColor(char* ImageCharBuff, const Math::color color, const Math::vec2i imageSize, const Math::vec2i PixelCoords);
+		void MakeValidColor(Math::color& inColor);
+
+		void writeColor(char* ImageCharBuff, Math::color color, const Math::vec2i imageSize, const Math::vec2i PixelCoords);
 
 		void writePixelColor(uint32* Pixel, Math::color color);
 
@@ -111,6 +113,40 @@ namespace RTW
 				return UnitSphereVec;
 			}
 			return UnitSphereVec * -1;
+		};
+
+		RTW_STATIC RTW_INLINE Math::vec3 RandomCosineDirection()
+		{
+			auto r1 = randomDouble();
+			auto r2 = randomDouble();
+
+			auto phi = 2 * Math::pi<float64>()* r1;
+			auto x = Math::cos(phi) * Math::sqrt(r2);
+			auto y = Math::sin(phi) * Math::sqrt(r2);
+			auto z = Math::sqrt(1 - r2);
+
+			return { x,y,z };
+		};
+
+		struct ONB
+		{
+			ONB(const Math::vec3& n)
+			{
+				axisMatrix.zVector = n.GetNormalized();
+				Math::vec3 a = Math::abs(axisMatrix.zVector.x) > 0.9 ? Math::vec3{0, 1, 0} : Math::vec3{1, 0, 0};
+				axisMatrix.yVector = Math::CrossProduct(axisMatrix.zVector, a).Normalize();
+				axisMatrix.xVector = Math::CrossProduct(axisMatrix.zVector, axisMatrix.yVector);
+			}
+
+			const Math::vec3& u() const { return axisMatrix.xVector; }
+			const Math::vec3& v() const { return axisMatrix.yVector; }
+			const Math::vec3& w() const { return axisMatrix.zVector; }
+
+			Math::vec3 transform(const Math::vec3& v) const
+			{
+				return (v.x * axisMatrix.xVector) + (v.y* axisMatrix.yVector) + (v.z * axisMatrix.zVector);
+			}
+			Math::mat3x3 axisMatrix;
 		};
 	}
 

@@ -29,8 +29,15 @@ namespace RTW
 	public:
 		virtual bool hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const = 0;
 
-
 		virtual D3Math::AABB boundingBox() const = 0;
+
+		virtual float64 pdf_value(const Math::vec3& origin, const Math::vec3& direction) const {
+			return 0.0;
+		}
+
+		virtual Math::vec3 random(const Math::vec3& origin) const {
+			return { 1, 0, 0 };
+		}
 	};
 
 	class TranslatedObject : public RayObject

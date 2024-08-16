@@ -10,31 +10,37 @@ namespace RTW {
 
 	namespace Materials {
 
-		bool Lambertian::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
+		bool Lambertian::scatter(const Ray* rayIn, const HitRecord* rec, ScatterRecord& srec)  const
 		{
-			Math::vec3 ScatterDirection = rec->normal + Util::RandomUnitSphereUnitVector();
-
-			if (ScatterDirection.NearZero())
-			{
-				ScatterDirection = rec->normal;
-			}
-
-			*scattered = Ray(rec->p, ScatterDirection, rayIn->tm);
-			attenuation = tex->value(rec->U,rec->V,rec->p);
+			srec.attenuation = tex->value(rec->U, rec->V, rec->p);
+			srec.pdf = MakeUniqueHandle<PDFs::CosinePDF>(rec->normal).RetrieveResourse();
+			srec.skipOff = false;
 			return true;
 		}
 
-		bool Metal::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
+		float64 Lambertian::scattering_pdf(const Ray* r_in, const HitRecord* rec, const Ray* scattered) const
+		{
+			float64 cos_theta = Math::DotProduct(rec->normal, scattered->direction().Normalize());
+			return cos_theta < 0 ? 0 : cos_theta / Math::pi<float64>();
+		}
+
+		bool Metal::scatter(const Ray* rayIn, const HitRecord* rec, ScatterRecord& srec)  const
 		{
 			Math::vec3 Reflected = rayIn->direction().Reflect(rec->normal);
 			Reflected = Reflected.GetNormalized() + (Util::RandomUnitSphereUnitVector() * Fuzz);
-			*scattered = Ray(rec->p, Reflected, rayIn->tm);
-			attenuation = albedo;
-			return Math::more(scattered->direction().DotProduct(rec->normal), 0);
+			
+			srec.attenuation = albedo;
+			srec.pdf = nullptr;
+			srec.skipOff = true;
+			srec.skipPdfRay = Ray(rec->p, Reflected, rayIn->tm);
+
+			return true;
 		}
-		bool Dielectric::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
+		bool Dielectric::scatter(const Ray* rayIn, const HitRecord* rec, ScatterRecord& srec)  const
 		{
-			attenuation = { 1.f};
+			srec.attenuation = { 1,1,1 };
+			srec.pdf = nullptr;
+			srec.skipOff = true;
 			float64 ri = rec->frontFace ? (1.0 / refractionIndex) : refractionIndex;
 			Math::vec3 normalizedDirection = rayIn->direction().Normalize();
 
@@ -53,19 +59,26 @@ namespace RTW {
 				Direction = normalizedDirection.Refract(rec->normal, ri);
 			}
 
-			*scattered = Ray(rec->p, Direction, rayIn->tm);
+			srec.skipPdfRay = Ray(rec->p, Direction, rayIn->tm);
 			return true;
 		}
 
-		Math::color DiffuseLight::emit(float64 u, float64 v, const Math::vec3& p) const
+		Math::color DiffuseLight::emit(const Ray* rayIn, const HitRecord* rec, float64 u, float64 v, const Math::vec3& p) const
 		{
+			if (!rec->frontFace)
+				return { 0.0 };
 			return tex->value(u, v, p);
 		}
-		bool Isotropic::scatter(const Ray* rayIn, const HitRecord* rec, Math::color& attenuation, Ray* scattered) const
+		bool Isotropic::scatter(const Ray* rayIn, const HitRecord* rec, ScatterRecord& srec)  const
 		{
-			*scattered = Ray(rec->p, Util::RandomUnitSphereUnitVector(), rayIn->tm);
-			attenuation = tex->value(rec->U, rec->V, rec->p);
+			srec.attenuation = tex->value(rec->U, rec->V, rec->p);
+			srec.pdf = MakeUniqueHandle<PDFs::SpherePDF>().RetrieveResourse();
+			srec.skipOff = false;
 			return true;
+		}
+		float64 Isotropic::scattering_pdf(const Ray* r_in, const HitRecord* rec, const Ray* scattered) const
+		{
+			return 1 / (4 * Math::pi<float64>());
 		}
 	}
 }

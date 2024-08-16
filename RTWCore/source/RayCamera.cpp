@@ -10,6 +10,7 @@
 #include "RTW_Memory.h"
 #include "RTW_Material.h"
 #include "Containers/RTW_DynamicArray.h"
+#include "PDF.h"
 
 #include <thread>
 #include <future>
@@ -19,7 +20,7 @@
 #define RENDER_ON_SURFACE 1
 
 #define RENDER_MULTITHREAD 1
-const uint32 maxThreads = 10;
+const uint32 maxThreads = 3;
 
 namespace RTW
 {
@@ -31,7 +32,7 @@ namespace RTW
 		//initialize();
 	}
 
-	void RayCamera::render(const RayList& world)
+	void RayCamera::render(const RayObject& world, const RayObject& lights)
 	{
 		Containers::DynamicArray<char>* CharImageBuffPtr = nullptr;
 #if WRITE_TO_IMAGE == 1
@@ -55,10 +56,9 @@ namespace RTW
 			YStartThreadOffset = Math::clamp(YStartThreadOffset,0, imageHeight - ImageThreadPart);
 			YEndThreadOffset = Math::clamp(YEndThreadOffset, YStartThreadOffset, imageHeight);
 
-			auto RenderF = [&world, CharImageBuffPtr, this](int32 YStartThreadOffset, int32 YEndThreadOffset, 
+			auto RenderF = [&world,&lights, CharImageBuffPtr, this](int32 YStartThreadOffset, int32 YEndThreadOffset,
 				Containers::DynamicArray<char>* ImageCharBuff)
 			{
-
 				for (int32 YPixelIndex = YStartThreadOffset; YPixelIndex < YEndThreadOffset; YPixelIndex++)
 				{
 
@@ -70,7 +70,7 @@ namespace RTW
 							return;
 						}
 						//RTW_INFO("THREAD ID : %i  COORDS{X: %i, Y: %i}\n\0", std::this_thread::get_id(), XPixelIndex, YPixelIndex);
-						RenderPixel(world, { XPixelIndex,YPixelIndex }, maxDepth, CharImageBuffPtr);
+						RenderPixel(world,lights, { XPixelIndex,YPixelIndex }, maxDepth, CharImageBuffPtr);
 					}
 				}
 			};
@@ -133,6 +133,10 @@ namespace RTW
 		imageHeight = imageWidth / aspectRatio;
 		imageHeight = imageHeight < 1 ? 1 : imageHeight;
 
+		sqrtSpp = int32(Math::sqrt(PerPixelSamples));
+		pixelSamplesScale = 1.0 / (sqrtSpp * sqrtSpp);
+		recipSqrtSpp = 1.0 / sqrtSpp;
+
 		float32 theta = Math::radians(VFov);
 		float32 h = Math::tan(theta / 2);
 		float32 viewportHeight = 2.f * h * focusDistance;
@@ -156,14 +160,19 @@ namespace RTW
 		defocusDiskV = v * defocusRadius;
 	}
 
-	void RayCamera::RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff)
+	void RayCamera::RenderPixel(const RayObject& world, const RayObject& lights, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff)
 	{
 		Math::color pixelColor{ 0, 0, 0 };
 
-		for (int32 sample = 0; sample < PerPixelSamples; sample++)
+
+		for (int32 s_J = 0; s_J < sqrtSpp; s_J++)
 		{
-			Ray r = getRay(PixelCoords.x, PixelCoords.y);
-			pixelColor += RayColorTrace(r, world, maxDepth) * pixelSamplesScale;
+			for (int32 s_I = 0; s_I < sqrtSpp; s_I++)
+			{
+				Ray r = getRay(PixelCoords.x, PixelCoords.y, s_I, s_J);
+				auto RawRayPixelColor = RayColorTrace(r, world, lights, maxDepth);
+				pixelColor += RawRayPixelColor * pixelSamplesScale;
+			}
 		}
 
 #if RENDER_MULTITHREAD == 1
@@ -183,7 +192,7 @@ namespace RTW
 #endif
 	}
 
-	Math::color RayCamera::RayColorTrace(const Ray& r, const RayList& world, int32 Depth)
+	Math::color RayCamera::RayColorTrace(const Ray& r, const RayObject& world, const RayObject& lights, int32 Depth)
 	{
 		if (Depth <= 0)
 		{
@@ -192,19 +201,31 @@ namespace RTW
 		else
 		{
 			RTW::HitRecord hitRecord{};
-			if (world.hit(r, 0.0001, Math::MaxFloat64(), hitRecord))
+			if (world.hit(r, 0.0001, Math::infinity<float64>(), hitRecord))
 			{
+				float64 pdfValue;
+				ScatterRecord srec;
+				Math::color emissionColor = hitRecord.mat->emit(&r, &hitRecord, hitRecord.U, hitRecord.V, hitRecord.p);
 
-				Ray Scattered{};
-				Math::color Attenuation{};
-				Math::color emissionColor = hitRecord.mat->emit(hitRecord.U, hitRecord.V, hitRecord.p);
-
-				if (!hitRecord.mat->scatter(&r, &hitRecord, Attenuation, &Scattered))
+				if (!hitRecord.mat->scatter(&r, &hitRecord, srec))
 				{
 					return emissionColor;
 				};
-				Math::color scatterColor = Attenuation * RayColorTrace(Scattered, world, Depth - 1);
-				
+
+				if (srec.skipOff)
+				{
+					return srec.attenuation * RayColorTrace(srec.skipPdfRay, world, lights, Depth - 1);
+				}
+
+				PDFs::MixturePDF mixedPdf{ MakeUniqueHandle<PDFs::HittablePDF>(&lights, hitRecord.p).RetrieveResourse(),srec.pdf.Get()};
+
+				Ray Scattered = Ray(hitRecord.p, mixedPdf.generate(), r.tm);
+				pdfValue = mixedPdf.value(Scattered.direction());
+
+				float64 scatteringPdf = hitRecord.mat->scattering_pdf(&r, &hitRecord, &Scattered);
+				Math::color sampleColor = RayColorTrace(Scattered, world, lights, Depth - 1);
+
+				Math::color scatterColor = (srec.attenuation * scatteringPdf * sampleColor) / pdfValue;
 				return scatterColor + emissionColor;
 			}
 			else
@@ -212,7 +233,7 @@ namespace RTW
 				if (useBackgroundBlend)
 				{
 					RTW::Math::vec3 unitDirection = RTW::Math::Normalize(r.direction());
-					float64 t = 0.5f * (unitDirection.y + .5f);
+					float64 t = 0.5 * (unitDirection.y + .5);
 					return (Math::color)RTW::Math::Lerp({ 1,1,1 }, (Math::vec3)backgroundColor, t);
 
 				}
@@ -234,13 +255,23 @@ namespace RTW
 		return center + (p[0] * defocusDiskU) + (p[1] * defocusDiskV);
 	}
 
-	Ray RayCamera::getRay(int32 i, int32 j) const
+	Ray RayCamera::getRay(int32 i, int32 j, int32 s_I, int32 s_J) const
 	{
-		Math::vec3 offset = sampleSquare();
+		Math::vec3 offset = sampleSquareStratified(s_I, s_J);
 		Math::vec3 pixelSample = ulCorner + ((i + offset.x) * pixelUOffset) + ((j + offset.y) * pixelVOffset);
 		Math::vec3 rayOrigin = (Math::less_or_equal(defocusAngle, 0) ? center : defocusDiskSample());
 		Math::vec3 rayDirection = pixelSample - rayOrigin;
 		float64 rayTime = Util::randomDouble(0.f, 1.f);
 		return Ray(rayOrigin, rayDirection, rayTime);
 	}
+
+	Math::vec3 RayCamera::sampleSquareStratified(int32 s_I, int32 s_J) const
+	{
+
+		auto px = ((s_I + Util::randomDouble()) * recipSqrtSpp) - 0.5;
+		auto py = ((s_J + Util::randomDouble()) * recipSqrtSpp) - 0.5;
+
+		return Math::vec3{ px,py,0 };
+	}
+
 };

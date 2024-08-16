@@ -434,8 +434,8 @@ namespace harz {
 		}
 
 		// Min value from x, y
-		template<typename comparableType, typename other_comparableType>
-		MATHARZ_INLINE comparableType min(comparableType x, other_comparableType y)
+		template<typename comparableType>
+		MATHARZ_INLINE comparableType min(comparableType x, comparableType y)
 		{
 			return (x < y) ? x : y;
 		}
@@ -451,8 +451,8 @@ namespace harz {
 		}
 
 		// Max value from x, y
-		template<typename comparableType, typename other_comparableType>
-		MATHARZ_INLINE comparableType max(comparableType x, other_comparableType y)
+		template<typename comparableType>
+		MATHARZ_INLINE comparableType max(comparableType x, comparableType y)
 		{
 			return (x > y) ? x : y;
 		}

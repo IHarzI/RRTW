@@ -7,6 +7,26 @@
 
 namespace RTW
 {
+
+	float64 Quad::pdf_value(const Math::vec3& origin, const Math::vec3& direction) const
+	{
+		HitRecord rec;
+		if (!this->hit(Ray(origin, direction), 0.0001, Math::infinity<float64>(), rec))
+			return 0;
+
+
+		auto distSqr = rec.t * rec.t * direction.SquareLength();
+		auto cosine = Math::abs(Math::DotProduct(direction, rec.normal) / direction.Lenght());
+
+		return distSqr / (cosine * area);
+	}
+
+	Math::vec3 Quad::random(const Math::vec3& origin) const
+	{
+		auto p = Q + (Util::randomDouble() * u) + (Util::randomDouble() * v);
+		return p - origin;
+	}
+
 	bool Quad::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
 	{
 		auto denom = Math::DotProduct(normal, r.direction());

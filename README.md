@@ -10,7 +10,5 @@ Just launch GenerateProject.bat and open/build vs solution.
 ### Other platforms
 ----
 ## Renders
-![FinalMultiSphereRender](https://github.com/user-attachments/assets/b3f8333c-bc85-4081-b35f-70ca7cce930f)
-![DistantFov20](https://github.com/user-attachments/assets/48dfaae7-0b45-4dea-a026-cf5f2cdf23b0)
+![Caustics](https://github.com/user-attachments/assets/805985fb-fc94-4d12-8fd1-8e7cfbdf2b94)
 ![CheckerParadise](https://github.com/user-attachments/assets/e4d4db1d-7759-4ff2-a3c0-ec01558683c9)
-![NoiseH](https://github.com/user-attachments/assets/0ac7010f-cdb6-4fa7-a037-ea23ade4faaa)

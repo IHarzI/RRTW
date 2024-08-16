@@ -24,12 +24,12 @@ RTW_STATIC void rtw_delete(T* address) noexcept;
 
 #define REFERENCE_INTERLOCK_GUARD std::lock_guard<std::mutex> InterlockGuard{RTW::Memory::detail::GetInterlockedMutex()};
 
-
 #define RTW_MEMORY_REF_INTRLK_GRD_DEC_U64(value) RTW::Memory::detail::ReferenceDecrementInterlocked(value)
 #define RTW_MEMORY_REF_INTRLK_GRD_INCR_U64(value) RTW::Memory::detail::ReferenceIncrementInterlocked(value)
 #define RTW_MEMORY_REF_INTRLK_GRD_GET_U64(value) RTW::Memory::detail::ReferenceGetValueInterlocked(value)
-#define RTW_MEMORY_REFMAP_INTRLK_GRD_GETREF_U64(value) RTW::Memory::detail::RefMapGetValueInterlocked(value, *RTW::Memory::detail::RefMap)
-#define RTW_MEMORY_REFMAP RTW::Memory::detail::RefMap
+#define RTW_MEMORY_REF_INTRLK_ERASE_REF(value) RTW::Memory::detail::RefMapEraseInterlocked(value, *RTW::Memory::detail::getRefMap())
+#define RTW_MEMORY_REFMAP_INTRLK_GRD_GETREF_U64(value) RTW::Memory::detail::RefMapGetValueInterlocked(value, *RTW::Memory::detail::getRefMap())
+#define RTW_MEMORY_REFMAP RTW::Memory::detail::getRefMap()
 
 namespace RTW
 {
@@ -39,7 +39,12 @@ namespace RTW
 			using RefCount = uint64;
 			using ValuePtr = void*;
 			using RefMapType = std::unordered_map<void*, uint64>;
-			RTW_STATIC RTW_INLINE RefMapType* RefMap = nullptr;
+
+			RTW_STATIC RefMapType* getRefMap()
+			{
+				RTW_STATIC RefMapType RefMap{};
+				return &RefMap;
+			}
 
 			RTW_STATIC RTW_INLINE std::mutex& GetInterlockedMutex() { RTW_STATIC std::mutex InterlockedMutex{}; return InterlockedMutex; }
 
@@ -50,6 +55,12 @@ namespace RTW
 					return &RefCounterToData->second;
 				}
 				return nullptr;
+			}
+
+			RTW_STATIC RTW_INLINE bool RefMapEraseInterlocked(void* address, std::unordered_map<void*, uint64>& RefMap) {
+				REFERENCE_INTERLOCK_GUARD
+				RefMap.erase(address);
+				return true;
 			}
 
 			RTW_STATIC RTW_INLINE void ReferenceIncrementInterlocked(uint64& ref) {
@@ -367,9 +378,9 @@ public:
 
 	bool IsValid() const
 	{
-		RTW_ASSERT(!Data || Data && RTW_MEMORY_REFMAP && RTW_MEMORY_REFMAP->find(Data) != RTW_MEMORY_REFMAP->end());
-
-		return Data != nullptr;
+		//RTW_ASSERT(!Data || Data && RTW_MEMORY_REFMAP && RTW_MEMORY_REFMAP->find(Data) != RTW_MEMORY_REFMAP->end());
+		REFERENCE_INTERLOCK_GUARD;
+		return Data != nullptr && RTW_MEMORY_REFMAP && RTW_MEMORY_REFMAP->find(Data) != RTW_MEMORY_REFMAP->end();
 	}
 
 	T* Get() const { return Data; };
@@ -482,20 +493,20 @@ private:
 	{
 		if (!RTW_MEMORY_REFMAP)
 		{
-			REFERENCE_INTERLOCK_GUARD
-			RTW_MEMORY_REFMAP = rtw_new<RTW::Memory::detail::RefMapType>();
+			//REFERENCE_INTERLOCK_GUARD
+			//RTW_MEMORY_REFMAP = rtw_new<RTW::Memory::detail::RefMapType>();
 			RTW_ASSERT(RTW_MEMORY_REFMAP);
 		}
 	}
 
 	void ReleaseRefMapIfEmpty()
 	{
-		if (RTW_MEMORY_REFMAP && RTW_MEMORY_REFMAP->empty())
-		{
-			REFERENCE_INTERLOCK_GUARD
-			rtw_delete(RTW_MEMORY_REFMAP);
-			RTW_MEMORY_REFMAP = nullptr;
-		}
+		//if (RTW_MEMORY_REFMAP && RTW_MEMORY_REFMAP->empty())
+		//{
+		//	REFERENCE_INTERLOCK_GUARD
+		//	rtw_delete(RTW_MEMORY_REFMAP);
+		//	RTW_MEMORY_REFMAP = nullptr;
+		//}
 	}
 
 	void ReleaseResourseChecked()
@@ -503,14 +514,20 @@ private:
 		RTW_ASSERT(!Data || Data && RTW_MEMORY_REFMAP);
 		if (Data && RTW_MEMORY_REFMAP)
 		{
-			auto RefCounterToData = RTW_MEMORY_REFMAP->find(Data);
-			RTW_ASSERT(RefCounterToData != RTW_MEMORY_REFMAP->end());
-			if (RefCounterToData != RTW_MEMORY_REFMAP->end())
+			uint64* Ref = nullptr;
 			{
-				RTW_MEMORY_REF_INTRLK_GRD_DEC_U64(RefCounterToData->second);
-				if (RTW_MEMORY_REF_INTRLK_GRD_GET_U64(RefCounterToData->second) < 1)
+				REFERENCE_INTERLOCK_GUARD;
+				auto RefCounterToData = RTW_MEMORY_REFMAP->find(Data);
+				RTW_ASSERT(RefCounterToData != RTW_MEMORY_REFMAP->end());
+				if(RefCounterToData != RTW_MEMORY_REFMAP->end())
+					Ref = &RefCounterToData->second;
+			};
+			if (Ref)
+			{
+				RTW_MEMORY_REF_INTRLK_GRD_DEC_U64(*Ref);
+				if (RTW_MEMORY_REF_INTRLK_GRD_GET_U64(*Ref) < 1)
 				{
-					RTW_MEMORY_REFMAP->erase(Data);
+					RTW_MEMORY_REF_INTRLK_ERASE_REF(Data);
 					rtw_delete(Data);
 					ReleaseRefMapIfEmpty();
 				}

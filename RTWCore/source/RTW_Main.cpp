@@ -37,7 +37,7 @@ enum SceneID : uint32
 
 using namespace RTW;
 
-void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
+void PopulateScene(RTW::RayList::ObjectList& world, RTW::RayList::ObjectList& lights, RTW::RayCamera& Camera, SceneID sceneID)
 {
     switch (sceneID)
     {
@@ -113,6 +113,7 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             auto marsTexture = MakeSharedHandle<RTW::Textures::ImageTexture>("Mars_2k.jpg");
             auto marsSurface = MakeSharedHandle<RTW::Materials::Lambertian>(marsTexture.Get());
             world.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3{ 0,0,0 }, 2, marsSurface.Get()).RetrieveResourse());
+
         }
     break;
     case PerlinNoise:
@@ -121,6 +122,7 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             auto noiseMaterial = MakeSharedHandle<RTW::Materials::Lambertian>(perlinNose.Get());
             world.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3{ 0,-1000,0 }, 1000, noiseMaterial.Get()).RetrieveResourse());
             world.EmplaceBack(MakeUniqueHandle<RTW::Sphere>(RTW::Math::vec3{ 0,2,0 }, 2, noiseMaterial.Get()).RetrieveResourse());
+
         }
     break;
     case QuadsRoom:
@@ -148,6 +150,12 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 0, 0 }, 2.5, DiamondGlass.Get()).RetrieveResourse());
             world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0.3, -0.1, 0 }, 0.7, Ethanol.Get()).RetrieveResourse());
             world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ -0.2, 0.3, -0.1 }, 0.3, Ice.Get()).RetrieveResourse());
+
+            Camera.setVFov(80);
+            Camera.SetViewPerspective({ 0,0,13 }, { 0,0,0 }, { 0,1,0 });
+            Camera.SetFocus(0.7, 12);
+            Camera.backgroundColor = { .002,.002,.01 };
+
         }
     break;
     case SimpleLightBox:
@@ -166,6 +174,12 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
             auto DiamondGlass = MakeSharedHandle<Materials::Dielectric>(2.417);
             world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 0, 0 }, 2.5, DiamondGlass.Get()).RetrieveResourse());
+
+            Camera.setVFov(80);
+            Camera.SetViewPerspective({ 0,0,13 }, { 0,0,0 }, { 0,1,0 });
+            Camera.SetFocus(0.7, 12);
+            Camera.backgroundColor = { .002,.002,.01 };
+
         }
     break;
     case CornelBox:
@@ -199,6 +213,12 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
             box2 = MakeUniqueHandle<RotateYOperation>(box2.RetrieveResourse(), 65.0).RetrieveResourse();
             box2 = MakeUniqueHandle<TranslatedObject>(box2.RetrieveResourse(), Math::vec3{ -3,0,0 }).RetrieveResourse();
             world.EmplaceBack(box2.RetrieveResourse());
+
+            Camera.setVFov(80);
+            Camera.SetViewPerspective({ 0,0,13 }, { 0,0,0 }, { 0,1,0 });
+            Camera.SetFocus(0.7, 12);
+            Camera.backgroundColor = { .002,.002,.01 };
+
         }
     break;
     case CornelBoxSmoke:
@@ -207,52 +227,70 @@ void PopulateScene(RTW::RayList::ObjectList& world, SceneID sceneID)
         auto greenMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ .0,1.0,.0 });
         auto blueMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ .0,.0,1.0 });
         auto whiteMat = MakeSharedHandle<Materials::Lambertian>(Math::color{ 0.98,.98,.98 });
-        auto LightMat = MakeSharedHandle<Materials::DiffuseLight>(Math::color{ 4,3.7,3.9 } *2.1);
-        auto whiteMetal = MakeSharedHandle<Materials::Metal>(Math::color{ 0.98,.98,.98 }, .47);
+        auto LightMat = MakeSharedHandle<Materials::DiffuseLight>(Math::color{ 4,3.7,3.9 } * 2.5);
+        auto whiteMetal = MakeSharedHandle<Materials::Metal>(Math::color{ 0.98,.98,.98 }, .05);
+        auto emptyMat = MakeSharedHandle<RTW_Material>();
+        auto Glass = MakeSharedHandle<RTW::Materials::Dielectric>(1.51);
 
-        auto Glass = MakeSharedHandle<RTW::Materials::Dielectric>(1.31);
+        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 555,0,0}, Math::vec3{ 0,0,555 }, Math::vec3{ 0,555,0 }, greenMat.Get()).RetrieveResourse());
+        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 0,0,555 }, Math::vec3{ 0,0,-555}, Math::vec3{ 0,555,0 }, redMat.Get()).RetrieveResourse());
+        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{0,555,0}, Math::vec3{ 555,0,0 }, Math::vec3{ 0,0,555 }, whiteMat.Get()).RetrieveResourse());
+        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 0,0,555}, Math::vec3{555,0,0}, Math::vec3{ 0,0,-555}, whiteMat.Get()).RetrieveResourse());
+        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 555,0,555}, Math::vec3{ -555,0,0}, Math::vec3{ 0,555,0}, whiteMat.Get()).RetrieveResourse());
+        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 213,554,227 }, Math::vec3{ 130,0,0 }, Math::vec3{ 0,0,105 }, LightMat.Get()).RetrieveResourse());
+        
 
-        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, redMat.Get()).RetrieveResourse());
-        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 1, 3.8, 3 }, Math::vec3{ -2,0,0 }, Math::vec3{ 0,0,2 }, LightMat.Get()).RetrieveResourse());
-        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 0 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,8,0 }, greenMat.Get()).RetrieveResourse());
-        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 4, -4,  8 }, Math::vec3{ 0,0,-16 }, Math::vec3{ 0,8,0 }, blueMat.Get()).RetrieveResourse());
-        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, 4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
-        world.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ -4, -4, 8 }, Math::vec3{ 8,0,0 }, Math::vec3{ 0,0,-8 }, whiteMat.Get()).RetrieveResourse());
-        world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 0, 2, 0 }, 2.35f, Glass.Get()).RetrieveResourse());
-        world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 2, 2, 6 }, .2f, whiteMetal.Get()).RetrieveResourse());
+        world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 190,245,190 }, 37, Glass.Get()).RetrieveResourse());
+        world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 173,378,245 }, 17.5, Glass.Get()).RetrieveResourse());
+
+        Math::vec3 SpheresSpawnOrigin{ 235,245,190 };
         const int32 MaxMetalSpheres = 100;
         for (int32 i = 0; i < MaxMetalSpheres; i++)
         {
-            world.EmplaceBack(MakeUniqueHandle<Sphere>(Util::RandomVector(-1.f, 1.f) + Math::vec3{ (float64)(i % 5 - 4),
-                ((float64)(i % 10) / 5.0), ((float64)(i % 20) / 10)}, .2f, whiteMetal.Get()).RetrieveResourse());
+        
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(SpheresSpawnOrigin + Util::RandomVector(-194.f, 194.f) + Math::vec3{ (float64)(i % 2),
+                ((float64)(i % 10) / 10.0), ((float64)(i % 20) / 10) + 2}, 15.8, whiteMetal.Get()).RetrieveResourse());
         }
-
+        
         const int32 MaxSolidSpheres = 50;
         for (int32 i = 0; i < MaxSolidSpheres; i++)
         {
-            world.EmplaceBack(MakeUniqueHandle<Sphere>(Util::RandomVector(-2.f,2.f) + Math::vec3{(float64)(i % 5 + 2) / 3.0, 
-                ((float64)(i % 10) / 2.0), ((float64)(i % 20) / 6)}, .2f, whiteMat.Get()).RetrieveResourse());
+            if (RTW::Util::randomDouble() > 0.75)
+            {
+                world.EmplaceBack(MakeUniqueHandle<Sphere>(SpheresSpawnOrigin + Util::RandomVector(-257.f, 189.f) + Math::vec3{ (float64)(i % 3),
+                ((float64)(i % 10) / 5.0), ((float64)(i % 20) / 6) }, Util::randomDouble(10,35), Glass.Get()).RetrieveResourse());
+            }
+            else
+            world.EmplaceBack(MakeUniqueHandle<Sphere>(SpheresSpawnOrigin + Util::RandomVector(-257.f,189.f) + Math::vec3{(float64)(i % 3),
+                ((float64)(i % 10) / 5.0), ((float64)(i % 20) / 6)}, 15, whiteMat.Get()).RetrieveResourse());
         }
 
-        Math::vec3 a = { 1,-4,6 };
-        Math::vec3 b = { -1,-2,4 };
-        UniqueMemoryHandle<RayObject> box1 = ConstructBox(a, b, whiteMat.Get()).RetrieveResourse();
-        box1 = MakeUniqueHandle<RotateYOperation>(box1.RetrieveResourse(), -16).RetrieveResourse();
-        box1 = MakeUniqueHandle<TranslatedObject>(box1.RetrieveResourse(), Math::vec3{ 1.5,0,-1 }).RetrieveResourse();
+        Math::vec3 a = { 0,0,0};
+        Math::vec3 b = {89,170,89};
+        UniqueMemoryHandle<RayObject> box1 = ConstructBox(a, b, whiteMetal.Get()).RetrieveResourse();
+        box1 = MakeUniqueHandle<RotateYOperation>(box1.RetrieveResourse(), 15).RetrieveResourse();
+        box1 = MakeUniqueHandle<TranslatedObject>(box1.RetrieveResourse(), Math::vec3{ 265,0,295 }).RetrieveResourse();
         world.EmplaceBack(box1.RetrieveResourse());
-        a = { 1,-6,6 };
-        b = { -1,0,4 };
-        UniqueMemoryHandle<RayObject> box2 = ConstructBox(a, b, whiteMetal.Get()).RetrieveResourse();
-        box2 = MakeUniqueHandle<RotateYOperation>(box2.RetrieveResourse(), 78.0).RetrieveResourse();
-        box2 = MakeUniqueHandle<TranslatedObject>(box2.RetrieveResourse(), Math::vec3{ -3,0,0 }).RetrieveResourse();
+        a = { 7,7,7};
+        b = { 170,170,170 };
+        UniqueMemoryHandle<RayObject> box2 = ConstructBox(a, b, whiteMat.Get()).RetrieveResourse();
+        box2 = MakeUniqueHandle<RotateYOperation>(box2.RetrieveResourse(), 5).RetrieveResourse();
+        box2 = MakeUniqueHandle<TranslatedObject>(box2.RetrieveResourse(), Math::vec3{ 120,0,150 }).RetrieveResourse();
         world.EmplaceBack(box2.RetrieveResourse());
+        
+        auto sphereW = MakeUniqueHandle<Sphere>(Math::vec3{400,235,325}, 95.5, Glass.Get());
+        //auto volume = MakeUniqueHandle<ConstantMedium>(sphereW.RetrieveResourse(), 14, Math::color{ .835,.955,.995 });
+        world.EmplaceBack(sphereW.RetrieveResourse());
 
-        auto sphereW = MakeUniqueHandle<Sphere>(Math::vec3{ 1.5,0.5,-2 }, 2.5, whiteMat.Get());
-        auto volume = MakeUniqueHandle<ConstantMedium>(sphereW.RetrieveResourse(), 15, Math::color{ .78,.95,.99 });
-        world.EmplaceBack(volume.RetrieveResourse());
-        sphereW = MakeUniqueHandle<Sphere>(Math::vec3{0,0,0 }, 25, whiteMat.Get());
-        volume = MakeUniqueHandle<ConstantMedium>(sphereW.RetrieveResourse(), .06, Math::color{ .78/10.0,.95/10.0,.99/10.0 });
-        world.EmplaceBack(volume.RetrieveResourse());
+        lights.EmplaceBack(MakeUniqueHandle<Quad>(Math::vec3{ 343,554,332 }, Math::vec3{ -130,0,0 }, Math::vec3{ 0,0,-105 }, emptyMat.Get()).RetrieveResourse());
+        //world.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 190,90,190 }, 90, LightMat.Get()).RetrieveResourse());
+        //lights.EmplaceBack(MakeUniqueHandle<Sphere>(Math::vec3{ 190,90,190 }, 90, emptyMat.Get()).RetrieveResourse());
+        //sphereW = MakeUniqueHandle<Sphere>(Math::vec3{400,300,400 }, 150, whiteMat.Get());
+        //auto volume = MakeUniqueHandle<ConstantMedium>(sphereW.RetrieveResourse(), 10, Math::color{ .78/10.0,.95/10.0,.99/10.0 });
+        //world.EmplaceBack(volume.RetrieveResourse());
+
+        Camera.SetViewPerspective({ 278,278,-800 }, { 278,278,0 }, {0,1,0});
+
         }
     break;
     default:
@@ -312,21 +350,23 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     // Setup RTW render
     // -----------------
     RTW::RayList::ObjectList ObjectList{ 50 };
-    
-    PopulateScene(ObjectList, CornelBoxSmoke);
+    RTW::RayList::ObjectList Lights{ 50 };
 
-    auto BVH = MakeSharedHandle<RTW::BVH_Node>(ObjectList, 0, ObjectList.size());
-    //RTW::RayList World{ BVH.Get()};
-    RTW::RayList World{ std::move(ObjectList)};
     // Camera init
     RTW::RayCamera Camera(1000, 16.0/9.0);
     RTWGlobalState.FrameBufferWidth = Camera.GetImageWidth();
     RTWGlobalState.FrameBufferHeight = Camera.GetImageHeight();
-    Camera.setPerPixelSamples(5500);
-    Camera.setDepth(350);
-    Camera.setVFov(80);
-    Camera.SetViewPerspective({ 0,0,13 }, { 0,0,0 }, { 0,1,0 });
-    Camera.SetFocus(0.7, 12);
+
+    PopulateScene(ObjectList, Lights, Camera ,CornelBoxSmoke);
+    //auto BVH = MakeSharedHandle<RTW::BVH_Node>(ObjectList, 0, ObjectList.size());
+    //RTW::RayList World{ BVH.Get()};
+    RTW::RayList World{ std::move(ObjectList)};
+    RTW::RayList LightList{ std::move(Lights) };
+
+    Camera.setPerPixelSamples(100);
+    Camera.setDepth(50);
+    Camera.setVFov(40);
+    Camera.SetFocus(0.25, 12);
     Camera.initialize();
     Camera.backgroundColor = {.002,.002,.01};
     Camera.useBackgroundBlend = false;
@@ -387,7 +427,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
     // START RTW RENDER
     // ----------------
-    std::thread RenderThread([&]() {Camera.render(World); });
+    std::thread RenderThread([&]() { Camera.render(World, LightList); });
     // ----------------
 
     while (RTWGlobalState.IsRunning)

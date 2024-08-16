@@ -22,6 +22,7 @@ namespace RTW
 			D = Math::DotProduct(normal, Q);
 			w = n / Math::DotProduct(n, n);
 
+			area = n.Lenght();
 			setBoundingBox();
 		}
 
@@ -31,6 +32,9 @@ namespace RTW
 			auto bBoxDiagonal2 = D3Math::AABB{ Q + u, Q + v};
 			bBox = D3Math::AABB{ bBoxDiagonal1,bBoxDiagonal2 };
 		}
+
+		float64 pdf_value(const Math::vec3& origin, const Math::vec3& direction) const override;
+		Math::vec3 random(const Math::vec3& origin) const override;
 
 		virtual D3Math::AABB boundingBox() const override { return bBox; }
 
@@ -47,6 +51,7 @@ namespace RTW
 		SharedMemoryHandle<RTW_Material> material;
 		Math::vec3 normal;
 		float64 D;
+		float64 area;
 	};
 
 	RTW_INLINE UniqueMemoryHandle<RayList> ConstructBox(const Math::vec3& a, const Math::vec3& b, SharedMemoryHandle<RTW_Material> mat)

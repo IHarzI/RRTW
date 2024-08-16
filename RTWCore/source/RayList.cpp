@@ -7,6 +7,7 @@
 
 namespace RTW
 {
+
 	bool RayList::hit(const Ray& r, float64 tMin, float64 tMax, HitRecord& rec) const
 	{
 		bool hitAnything = false;
@@ -22,5 +23,17 @@ namespace RTW
 			}
 		}
 		return hitAnything;
+	}
+
+	float64 RayList::pdf_value(const Math::vec3& origin, const Math::vec3& direction) const
+	{
+		auto weight = 1.0 / rayObjectsList.size();
+		auto sum = 0.0;
+
+		for (auto& object : rayObjectsList)
+		{
+			sum += weight * object->pdf_value(origin, direction);
+		}
+		return sum;
 	}
 };

@@ -32,7 +32,7 @@ namespace RTW
 	public:
 		RayCamera(int32 width, float32 aspectRatio, Math::vec3 center = {0,0,0});
 		void initialize();
-		void render(const RayList& world);
+		void render(const RayObject& world, const RayObject& lights);
 		void setPerPixelSamples(uint32 count) 
 		{
 			PerPixelSamples = count; 
@@ -58,16 +58,21 @@ namespace RTW
 		bool useBackgroundBlend = false;
 	private:
 
-		void RenderPixel(const RayList& world, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff = nullptr);
-		Math::color RayColorTrace(const Ray& r, const RayList& world, int32 Depth);
-		Ray getRay(int32 i, int32 j) const;
+		void RenderPixel(const RayObject& world, const RayObject& lights, Math::vec2i PixelCoords, int32 Depth, Containers::DynamicArray<char>* CharImageBuff = nullptr);
+		Math::color RayColorTrace(const Ray& r, const RayObject& world, const RayObject& lights, int32 Depth);
+		Ray getRay(int32 i, int32 j, int32 s_I, int32 s_J) const;
+
+		Math::vec3 sampleSquareStratified(int32 s_I, int32 s_J) const;
+
 		Math::vec3 sampleSquare() const;
 		Math::vec3 defocusDiskSample() const;
 
  		float32 aspectRatio = 1.0;
 		float64 pixelSamplesScale = 10.f;
-		int32    imageWidth = 100;
+		int32 imageWidth = 100;
 		int32 imageHeight;
+		int32 sqrtSpp;
+		float64 recipSqrtSpp;
 		uint32 PerPixelSamples = 10;
 		int32 maxDepth = 10;
 		float32 VFov = 90.f;
